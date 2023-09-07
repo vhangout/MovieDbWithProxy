@@ -1,0 +1,36 @@
+﻿<div id="movieDbWithProxyConfigurationPage" data-role="page" data-title="Proxie Configuration" class="page type-interior dlnaPage pluginConfigurationPage" data-require="jQuery,emby-select,emby-input,emby-button" data-controller="__plugin/proxysettingsjs">
+    <div data-role="content">
+        <div class="content-primary">
+
+            <form class="movieDbWithProxyForm">
+
+                <div class="selectContainer">
+                    <label class="inputLabel" for="selectProxyType">Proxy type</label>
+                    <select is="emby-select" id="selectProxyType">
+                        <option></option>
+                        <option value="HTTP">HTTP</option>
+                        <option value="SOCKS4">SOCKS4</option>
+                        <option value="SOCKS5">SOCKS5</option>
+                    </select>
+                </div>
+
+                <div class="inputContainer">
+                    <!-- <label class="inputLabel" for="txtProxyUrl">Proxy IP or DNS name</label> -->
+                    <input is="emby-input" type="text" id="txtProxyUrl" label="Proxy IP or DNS name" />
+                </div>
+
+                <div class="inputContainer">
+                    <!-- <label class="inputLabel" for="txtProxyPort">Port</label> -->
+                    <input is="emby-input" type="text" id="txtProxyPort" label="Port" />
+                </div>
+
+                <br />
+                <div>
+                    <button is="emby-button" type="submit" class="raised button-submit block">
+                        <span>Save</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

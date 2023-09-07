@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net6.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<AssemblyVersion>1.0.0.0</AssemblyVersion>
+		<FileVersion>1.0.0.0</FileVersion>
+		<PublishReadyToRun>true</PublishReadyToRun>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<EmbeddedResource Include="Configuration\MovieDbWithProxyPage.html" />
+		<EmbeddedResource Include="Configuration\MovieDbWithProxyPage.js" />
+		<EmbeddedResource Include="thumb.png" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="MediaBrowser.Server.Core" Version="4.7.9" />
+		<PackageReference Include="System.Memory" Version="4.5.5" />
+	</ItemGroup>
+	
+	<PropertyGroup>
+		<PostBuildEvent>xcopy "$(SolutionDir)bin\Release\net6.0\MovieDbWithProxy.dll" "$(SolutionDir)..\..\Work\programdata\plugins\" /Y</PostBuildEvent>
+	</PropertyGroup>
+
+</Project>
