@@ -15,7 +15,7 @@ namespace MovieDbWithProxy
       IRemoteSearchProvider,
       IHasMetadataFeatures
     {
-        public string Name => "TheMovieDb (proxy)";
+        public string Name => Plugin.ProviderName;
 
         public Task<MetadataResult<MusicVideo>> GetMetadata(
           MusicVideoInfo info,

@@ -3,9 +3,6 @@
 
     window.MovieDbWithProxyPage = {
         onSubmit: function (e) {
-
-            loading.show();
-
             var form = this;
 
             var page = dom.parentWithClass(form, 'page');
@@ -14,19 +11,12 @@
                 config.ProxyType = $('#selectProxyType', page).val();
                 config.ProxyUrl = page.querySelector('#txtProxyUrl').value;
                 config.ProxyPort = page.querySelector('#txtProxyPort').value;
-
-                var port = parseInt(config.ProxyPort, 10);
-                if (port && port > 1 && port < 65536) {
-                    ApiClient.updateNamedConfiguration("moviedbwithproxy", config)
-                        .then(Dashboard.processServerConfigurationUpdateResult);
-                } else {
-                    loading.hide();
-                }
+                ApiClient.updateNamedConfiguration("moviedbwithproxy", config)
+                        .then(Dashboard.processServerConfigurationUpdateResult, displayError);                
             });
 
             e.preventDefault();
             e.stopPropagation();
-
             return false;
         },
     };

@@ -18,12 +18,13 @@ namespace MovieDbWithProxy
 
         public override string Name => Plugin.StaticName;
         public static string StaticName => "MovieDbWithProxy";
+        public static string ProviderName => "TheMovieDb (proxy)";
 
         private Guid _id = new Guid(g: "522045F8-14D4-46E3-8DD6-580BE2E09F95");
 
-        public override Guid Id => this._id;
+        public override Guid Id => _id;
 
-        public override string Description => "MovieDb metadata for movies";
+        public override string Description => "MovieDb metadata for movies with using proxy";
 
         public ImageFormat ThumbImageFormat => ImageFormat.Png;
 

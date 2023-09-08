@@ -24,7 +24,7 @@ namespace MovieDbWithProxy
       IRemoteSearchProvider<ItemLookupInfo>,
       IRemoteSearchProvider
     {
-        public string Name => "TheMovieDb (proxy)";
+        public string Name => Plugin.ProviderName;
 
         private const string GetCollectionInfo3 = "https://api.themoviedb.org/3/collection/{0}?api_key={1}&append_to_response=images";
         internal static MovieDbBoxSetProvider Current;

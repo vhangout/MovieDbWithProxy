@@ -19,7 +19,7 @@ namespace MovieDbWithProxy
       IImageProvider,
       IHasOrder
     {
-        public string Name => "TheMovieDb (proxy)";
+        public string Name => Plugin.ProviderName;
 
         private readonly IJsonSerializer _jsonSerializer;
         private readonly IHttpClient _httpClient;

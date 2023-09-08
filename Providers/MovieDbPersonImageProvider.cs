@@ -18,7 +18,7 @@ namespace MovieDbWithProxy
       IImageProvider,
       IHasOrder
     {
-        public string Name => "TheMovieDb (proxy)";
+        public string Name => Plugin.ProviderName;
 
         private readonly IServerConfigurationManager _config;
         private readonly IJsonSerializer _jsonSerializer;

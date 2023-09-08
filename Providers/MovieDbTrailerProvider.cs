@@ -17,7 +17,7 @@ namespace MovieDbWithProxy
       IRemoteSearchProvider,
       IHasMetadataFeatures
     {
-        public string Name => "TheMovieDb (proxy)";
+        public string Name => Plugin.ProviderName;
 
         private readonly IHttpClient _httpClient;
 

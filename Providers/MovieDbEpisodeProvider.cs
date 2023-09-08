@@ -30,7 +30,7 @@ namespace MovieDbWithProxy
       IHasMetadataFeatures
     {
         public int Order => 1;
-        public string Name => "TheMovieDb (proxy)";
+        public string Name => Plugin.ProviderName;
 
         public MovieDbEpisodeProvider(
           IHttpClient httpClient,

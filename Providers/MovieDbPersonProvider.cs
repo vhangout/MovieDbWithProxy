@@ -26,7 +26,7 @@ namespace MovieDbWithProxy
       IRemoteSearchProvider<PersonLookupInfo>,
       IRemoteSearchProvider
     {
-        public string Name => "TheMovieDb (proxy)";
+        public string Name => Plugin.ProviderName;
 
         private readonly IJsonSerializer _jsonSerializer;
         private readonly IFileSystem _fileSystem;

@@ -31,7 +31,7 @@ namespace MovieDbWithProxy
       IHasOrder,
       IHasMetadataFeatures
     {
-        public string Name => "TheMovieDb (proxy)";
+        public string Name => Plugin.ProviderName;
 
         private const string GetTvInfo3 = "https://api.themoviedb.org/3/tv/{0}?api_key={1}&append_to_response=alternative_titles,reviews,credits,images,keywords,external_ids,videos,content_ratings";
         private readonly CultureInfo _usCulture = new CultureInfo("en-US");

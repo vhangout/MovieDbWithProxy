@@ -24,7 +24,7 @@ namespace MovieDbWithProxy
       IImageProvider,
       IHasOrder
     {
-        public string Name => "TheMovieDb (proxy)";
+        public string Name => Plugin.ProviderName;
 
         public MovieDbEpisodeImageProvider(
           IHttpClient httpClient,
