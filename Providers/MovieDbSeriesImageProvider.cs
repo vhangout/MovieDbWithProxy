@@ -8,6 +8,7 @@ using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.IO;
 using MediaBrowser.Model.Providers;
 using MediaBrowser.Model.Serialization;
+using MovieDbWithProxy.Commons;
 using MovieDbWithProxy.Models;
 using HttpRequestOptions = MediaBrowser.Common.Net.HttpRequestOptions;
 
@@ -31,7 +32,8 @@ namespace MovieDbWithProxy
           IFileSystem fileSystem)
         {
             _jsonSerializer = jsonSerializer;
-            _httpClient = httpClient;
+            //_httpClient = httpClient;
+            _httpClient = HttpClientWithProxy.getInstance();
             _fileSystem = fileSystem;
         }
 

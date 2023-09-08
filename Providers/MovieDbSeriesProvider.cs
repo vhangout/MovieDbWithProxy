@@ -13,6 +13,7 @@ using MediaBrowser.Model.Logging;
 using MediaBrowser.Model.Net;
 using MediaBrowser.Model.Providers;
 using MediaBrowser.Model.Serialization;
+using MovieDbWithProxy.Commons;
 using MovieDbWithProxy.Models;
 using System.Globalization;
 using System.Net;
@@ -59,7 +60,8 @@ namespace MovieDbWithProxy
             _configurationManager = configurationManager;
             _logger = logger;
             _localization = localization;
-            _httpClient = httpClient;
+            //_httpClient = httpClient;
+            _httpClient = HttpClientWithProxy.getInstance();
             _libraryManager = libraryManager;
             Current = this;
         }

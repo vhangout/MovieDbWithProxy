@@ -7,6 +7,7 @@ using MediaBrowser.Model.Dto;
 using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.Providers;
 using MediaBrowser.Model.Serialization;
+using MovieDbWithProxy.Commons;
 using MovieDbWithProxy.Models;
 using HttpRequestOptions = MediaBrowser.Common.Net.HttpRequestOptions;
 
@@ -31,7 +32,8 @@ namespace MovieDbWithProxy
         {
             _config = config;
             _jsonSerializer = jsonSerializer;
-            _httpClient = httpClient;
+            //_httpClient = httpClient;
+            _httpClient = HttpClientWithProxy.getInstance();
         }
 
         public bool Supports(BaseItem item) => item is Person;

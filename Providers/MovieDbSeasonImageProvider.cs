@@ -12,6 +12,7 @@ using MediaBrowser.Model.Logging;
 using MediaBrowser.Model.Net;
 using MediaBrowser.Model.Providers;
 using MediaBrowser.Model.Serialization;
+using MovieDbWithProxy.Commons;
 using MovieDbWithProxy.Models;
 using HttpRequestOptions = MediaBrowser.Common.Net.HttpRequestOptions;
 
@@ -36,7 +37,8 @@ namespace MovieDbWithProxy
           ILocalizationManager localization,
           ILogManager logManager)
         {
-            _httpClient = httpClient;
+            //_httpClient = httpClient;
+            _httpClient = HttpClientWithProxy.getInstance();
             _seasonProvider = new MovieDbSeasonProvider(httpClient, configurationManager, fileSystem, localization, jsonSerializer, logManager);
         }
 

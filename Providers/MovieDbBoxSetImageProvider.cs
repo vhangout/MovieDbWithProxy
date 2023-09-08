@@ -5,6 +5,7 @@ using MediaBrowser.Model.Configuration;
 using MediaBrowser.Model.Dto;
 using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.Providers;
+using MovieDbWithProxy.Commons;
 using MovieDbWithProxy.Models;
 using HttpRequestOptions = MediaBrowser.Common.Net.HttpRequestOptions;
 
@@ -20,7 +21,7 @@ namespace MovieDbWithProxy
 
         private readonly IHttpClient _httpClient;
 
-        public MovieDbBoxSetImageProvider(IHttpClient httpClient) => _httpClient = httpClient;
+        public MovieDbBoxSetImageProvider(IHttpClient httpClient) => _httpClient = HttpClientWithProxy.getInstance();
         
 
         public bool Supports(BaseItem item) => item is BoxSet;

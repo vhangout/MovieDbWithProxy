@@ -3,6 +3,7 @@ using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Providers;
 using MediaBrowser.Model.Configuration;
 using MediaBrowser.Model.Providers;
+using MovieDbWithProxy.Commons;
 using HttpRequestOptions = MediaBrowser.Common.Net.HttpRequestOptions;
 
 namespace MovieDbWithProxy
@@ -21,7 +22,7 @@ namespace MovieDbWithProxy
 
         private readonly IHttpClient _httpClient;
 
-        public MovieDbTrailerProvider(IHttpClient httpClient) => _httpClient = httpClient;
+        public MovieDbTrailerProvider(IHttpClient httpClient) => _httpClient = HttpClientWithProxy.getInstance();
 
         public Task<IEnumerable<RemoteSearchResult>> GetSearchResults(
           TrailerInfo searchInfo,
