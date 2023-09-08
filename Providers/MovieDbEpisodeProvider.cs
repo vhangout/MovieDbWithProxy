@@ -30,7 +30,7 @@ namespace MovieDbWithProxy
       IHasMetadataFeatures
     {
         public int Order => 1;
-        public string Name => "TheMovieDb";
+        public string Name => "TheMovieDb (proxy)";
 
         public MovieDbEpisodeProvider(
           IHttpClient httpClient,

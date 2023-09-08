@@ -31,6 +31,8 @@ namespace MovieDbWithProxy
       IHasOrder,
       IHasMetadataFeatures
     {
+        public string Name => "TheMovieDb (proxy)";
+
         private const string GetTvInfo3 = "https://api.themoviedb.org/3/tv/{0}?api_key={1}&append_to_response=alternative_titles,reviews,credits,images,keywords,external_ids,videos,content_ratings";
         private readonly CultureInfo _usCulture = new CultureInfo("en-US");
         private readonly IJsonSerializer _jsonSerializer;
@@ -40,8 +42,6 @@ namespace MovieDbWithProxy
         private readonly ILocalizationManager _localization;
         private readonly IHttpClient _httpClient;
         private readonly ILibraryManager _libraryManager;
-
-        public string Name => "TheMovieDb";
 
         internal static MovieDbSeriesProvider Current { get; private set; }
 

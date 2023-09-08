@@ -19,6 +19,8 @@ namespace MovieDbWithProxy
       IImageProvider,
       IHasOrder
     {
+        public string Name => "TheMovieDb (proxy)";
+
         private readonly IJsonSerializer _jsonSerializer;
         private readonly IHttpClient _httpClient;
         private readonly IFileSystem _fileSystem;
@@ -32,10 +34,6 @@ namespace MovieDbWithProxy
             _httpClient = httpClient;
             _fileSystem = fileSystem;
         }
-
-        public string Name => ProviderName;
-
-        public static string ProviderName => "TheMovieDb";
 
         public bool Supports(BaseItem item) => item is Series;
 

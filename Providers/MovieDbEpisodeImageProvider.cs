@@ -24,6 +24,8 @@ namespace MovieDbWithProxy
       IImageProvider,
       IHasOrder
     {
+        public string Name => "TheMovieDb (proxy)";
+
         public MovieDbEpisodeImageProvider(
           IHttpClient httpClient,
           IServerConfigurationManager configurationManager,
@@ -97,8 +99,6 @@ namespace MovieDbWithProxy
         private IEnumerable<TmdbImage> GetPosters(Images images) => (IEnumerable<TmdbImage>)images.stills ?? new List<TmdbImage>();
 
         public Task<HttpResponseInfo> GetImageResponse(string url, CancellationToken cancellationToken) => GetResponse(url, cancellationToken);
-
-        public string Name => "TheMovieDb";
 
         public bool Supports(BaseItem item) => item is Episode;
 

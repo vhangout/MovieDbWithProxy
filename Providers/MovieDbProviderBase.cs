@@ -39,7 +39,7 @@ namespace MovieDbWithProxy
             _logger = logManager.GetLogger(GetType().Name);
         }
 
-        protected ILogger Logger => this._logger;
+        protected ILogger Logger => _logger;
 
         protected async Task<RootObject> GetEpisodeInfo(
           string tmdbId,
@@ -58,23 +58,20 @@ namespace MovieDbWithProxy
             RootObject rootObject;
             if (!directoryService.TryGetFromCache(cacheKey, out rootObject))
             {
-                string dataFilePath = this.GetDataFilePath(tmdbId, seasonNumber, episodeNumber, language);
-                FileSystemMetadata fileSystemInfo = this.FileSystem.GetFileSystemInfo(dataFilePath);
-                if (fileSystemInfo.Exists && DateTimeOffset.UtcNow - this.FileSystem.GetLastWriteTimeUtc(fileSystemInfo) <= MovieDbProviderBase.CacheTime)
-                    rootObject = await this._jsonSerializer.DeserializeFromFileAsync<MovieDbProviderBase.RootObject>(dataFilePath).ConfigureAwait(false);
+                string dataFilePath = GetDataFilePath(tmdbId, seasonNumber, episodeNumber, language);
+                FileSystemMetadata fileSystemInfo = FileSystem.GetFileSystemInfo(dataFilePath);
+                if (fileSystemInfo.Exists && DateTimeOffset.UtcNow - FileSystem.GetLastWriteTimeUtc(fileSystemInfo) <= CacheTime)
+                    rootObject = await _jsonSerializer.DeserializeFromFileAsync<RootObject>(dataFilePath).ConfigureAwait(false);
                 if (rootObject == null)
                 {
-                    this.FileSystem.CreateDirectory(this.FileSystem.GetDirectoryName(dataFilePath));
-                    rootObject = await this.DownloadEpisodeInfo(tmdbId, seasonNumber, episodeNumber, language, preferredMetadataCountry, dataFilePath, cancellationToken).ConfigureAwait(false);
-                    using (Stream fileStream = this.FileSystem.GetFileStream(dataFilePath, (FileOpenMode)2, (FileAccessMode)2, (FileShareMode)1, false))
-                        this._jsonSerializer.SerializeToStream((object)rootObject, fileStream);
+                    FileSystem.CreateDirectory(FileSystem.GetDirectoryName(dataFilePath));
+                    rootObject = await DownloadEpisodeInfo(tmdbId, seasonNumber, episodeNumber, language, preferredMetadataCountry, dataFilePath, cancellationToken).ConfigureAwait(false);
+                    using (Stream fileStream = FileSystem.GetFileStream(dataFilePath, FileOpenMode.Create, FileAccessMode.Write, FileShareMode.Read, false))
+                        _jsonSerializer.SerializeToStream(rootObject, fileStream);
                 }
-                directoryService.AddOrUpdateCache(cacheKey, (object)rootObject);
-                dataFilePath = (string)null;
+                directoryService.AddOrUpdateCache(cacheKey, rootObject);
             }
-            MovieDbProviderBase.RootObject episodeInfo = rootObject;
-            cacheKey = (string)null;
-            return episodeInfo;
+            return rootObject;
         }
 
         internal string GetDataFilePath(
@@ -87,10 +84,10 @@ namespace MovieDbWithProxy
                 throw new ArgumentNullException(nameof(tmdbId));
             if (string.IsNullOrEmpty(preferredLanguage))
                 throw new ArgumentNullException(nameof(preferredLanguage));
-            return Path.Combine(MovieDbSeriesProvider.GetSeriesDataPath((IApplicationPaths)this._configurationManager.ApplicationPaths, tmdbId), string.Format("season-{0}-episode-{1}-{2}.json", (object)seasonNumber.ToString((IFormatProvider)CultureInfo.InvariantCulture), (object)episodeNumber.ToString((IFormatProvider)CultureInfo.InvariantCulture), (object)preferredLanguage));
+            return Path.Combine(MovieDbSeriesProvider.GetSeriesDataPath(_configurationManager.ApplicationPaths, tmdbId), string.Format("season-{0}-episode-{1}-{2}.json", seasonNumber.ToString(CultureInfo.InvariantCulture), episodeNumber.ToString(CultureInfo.InvariantCulture), preferredLanguage));
         }
 
-        internal async Task<MovieDbProviderBase.RootObject> DownloadEpisodeInfo(
+        internal async Task<RootObject> DownloadEpisodeInfo(
           string id,
           int seasonNumber,
           int episodeNumber,
@@ -99,13 +96,13 @@ namespace MovieDbWithProxy
           string dataFilePath,
           CancellationToken cancellationToken)
         {
-            MovieDbProviderBase.RootObject rootObject = await this.FetchMainResult("https://api.themoviedb.org/3/tv/{0}/season/{1}/episode/{2}?api_key={3}&append_to_response=images,external_ids,credits,videos", id, seasonNumber, episodeNumber, preferredMetadataLanguage, preferredMetadataCountry, cancellationToken).ConfigureAwait(false);
-            this.FileSystem.CreateDirectory(this.FileSystem.GetDirectoryName(dataFilePath));
-            this._jsonSerializer.SerializeToFile((object)rootObject, dataFilePath);
+            RootObject rootObject = await FetchMainResult("https://api.themoviedb.org/3/tv/{0}/season/{1}/episode/{2}?api_key={3}&append_to_response=images,external_ids,credits,videos", id, seasonNumber, episodeNumber, preferredMetadataLanguage, preferredMetadataCountry, cancellationToken).ConfigureAwait(false);
+            FileSystem.CreateDirectory(FileSystem.GetDirectoryName(dataFilePath));
+            _jsonSerializer.SerializeToFile(rootObject, dataFilePath);
             return rootObject;
         }
 
-        internal async Task<MovieDbProviderBase.RootObject> FetchMainResult(
+        internal async Task<RootObject> FetchMainResult(
           string urlPattern,
           string id,
           int seasonNumber,
@@ -114,13 +111,13 @@ namespace MovieDbWithProxy
           string country,
           CancellationToken cancellationToken)
         {
-            string url = string.Format(urlPattern, (object)id, (object)seasonNumber.ToString((IFormatProvider)CultureInfo.InvariantCulture), (object)episodeNumber, (object)MovieDbProvider.ApiKey);
+            string url = string.Format(urlPattern, id, seasonNumber.ToString(CultureInfo.InvariantCulture), episodeNumber, MovieDbProvider.ApiKey);
             if (!string.IsNullOrEmpty(language))
-                url += string.Format("&language={0}", (object)MovieDbProvider.NormalizeLanguage(language, country));
+                url += string.Format("&language={0}", MovieDbProvider.NormalizeLanguage(language, country));
             string str = MovieDbProvider.AddImageLanguageParam(url, language, country);
             cancellationToken.ThrowIfCancellationRequested();
             MovieDbProvider current = MovieDbProvider.Current;
-            MovieDbProviderBase.RootObject rootObject;
+            RootObject rootObject;
             using (HttpResponseInfo response = await current.GetMovieDbResponse(new HttpRequestOptions()
             {
                 Url = str,
@@ -129,12 +126,12 @@ namespace MovieDbWithProxy
             }).ConfigureAwait(false))
             {
                 using (Stream json = response.Content)
-                    rootObject = await this._jsonSerializer.DeserializeFromStreamAsync<MovieDbProviderBase.RootObject>(json).ConfigureAwait(false);
+                    rootObject = await _jsonSerializer.DeserializeFromStreamAsync<RootObject>(json).ConfigureAwait(false);
             }
             return rootObject;
         }
 
-        protected Task<HttpResponseInfo> GetResponse(string url, CancellationToken cancellationToken) => this._httpClient.GetResponse(new HttpRequestOptions()
+        protected Task<HttpResponseInfo> GetResponse(string url, CancellationToken cancellationToken) => _httpClient.GetResponse(new HttpRequestOptions()
         {
             CancellationToken = cancellationToken,
             Url = url

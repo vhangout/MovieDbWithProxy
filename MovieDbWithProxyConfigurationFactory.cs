@@ -9,7 +9,7 @@ namespace MovieDbWithProxy
 {
     public class MovieDbWithProxyConfigurationFactory : IConfigurationFactory
     {
-        public IEnumerable<ConfigurationStore> GetConfigurations() => (IEnumerable<ConfigurationStore>)new ConfigurationStore[1]
+        public IEnumerable<ConfigurationStore> GetConfigurations() => new ConfigurationStore[1]
         {
             new ConfigurationStore()
             {

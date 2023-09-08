@@ -33,6 +33,8 @@ namespace MovieDbWithProxy
         IHasOrder,
         IHasMetadataFeatures
     {
+        public string Name => "TheMovieDb (proxy)";
+
         private readonly IJsonSerializer _jsonSerializer;
         private readonly IHttpClient _httpClient;
         private readonly IFileSystem _fileSystem;
@@ -41,7 +43,6 @@ namespace MovieDbWithProxy
         private readonly ILocalizationManager _localization;
         private readonly ILibraryManager _libraryManager;
         private readonly IApplicationHost _appHost;
-        public string Name => "TheMovieDb";
 
         private readonly CultureInfo _usCulture = new CultureInfo("en-US");
         private TmdbSettingsResult? _tmdbSettings;

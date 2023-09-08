@@ -23,6 +23,8 @@ namespace MovieDbWithProxy
       IImageProvider,
       IHasOrder
     {
+        public string Name => "TheMovieDb (proxy)";
+
         private readonly IHttpClient _httpClient;
         private readonly MovieDbSeasonProvider _seasonProvider;
 
@@ -37,10 +39,6 @@ namespace MovieDbWithProxy
             _httpClient = httpClient;
             _seasonProvider = new MovieDbSeasonProvider(httpClient, configurationManager, fileSystem, localization, jsonSerializer, logManager);
         }
-
-        public string Name => ProviderName;
-
-        public static string ProviderName => "TheMovieDb";
 
         public bool Supports(BaseItem item) => item is Season;
 

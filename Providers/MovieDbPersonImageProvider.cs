@@ -18,6 +18,8 @@ namespace MovieDbWithProxy
       IImageProvider,
       IHasOrder
     {
+        public string Name => "TheMovieDb (proxy)";
+
         private readonly IServerConfigurationManager _config;
         private readonly IJsonSerializer _jsonSerializer;
         private readonly IHttpClient _httpClient;
@@ -32,16 +34,12 @@ namespace MovieDbWithProxy
             _httpClient = httpClient;
         }
 
-        public string Name => ProviderName;
-
-        public static string ProviderName => "TheMovieDb";
-
         public bool Supports(BaseItem item) => item is Person;
 
         public IEnumerable<ImageType> GetSupportedImages(BaseItem item) => new List<ImageType>()
-    {
-      ImageType.Primary
-    };
+        {
+            ImageType.Primary
+        };
 
         public async Task<IEnumerable<RemoteImageInfo>> GetImages(
           RemoteImageFetchOptions options,

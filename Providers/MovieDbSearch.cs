@@ -59,10 +59,10 @@ namespace MovieDbWithProxy
             if (string.IsNullOrEmpty(name))
                 return new List<RemoteSearchResult>();
             TmdbSettingsResult tmdbSettings = await MovieDbProvider.Current.GetTmdbSettings(cancellationToken).ConfigureAwait(false);
-            this._logger.Info("MovieDbProvider: Finding id for item: " + name, Array.Empty<object>());
+            _logger.Info("MovieDbProvider: Finding id for item: " + name, Array.Empty<object>());
             string language = idInfo.MetadataLanguage;
             string country = idInfo.MetadataCountryCode;
-            List<RemoteSearchResult> searchResults = await this.GetSearchResults(idInfo, searchType, language, country, tmdbSettings, cancellationToken).ConfigureAwait(false);
+            List<RemoteSearchResult> searchResults = await GetSearchResults(idInfo, searchType, language, country, tmdbSettings, cancellationToken).ConfigureAwait(false);
             if (searchResults.Count == 0 && !string.Equals(language, "en", StringComparison.OrdinalIgnoreCase))
             {
                 language = "en";
@@ -86,12 +86,12 @@ namespace MovieDbWithProxy
             string tmdbImageUrl = tmdbSettings.images.GetImageUrl("original");
             if (!string.IsNullOrWhiteSpace(name))
             {
-                ItemLookupInfo name1 = this._libraryManager.ParseName(MemoryExtensions.AsSpan(name));
+                ItemLookupInfo name1 = _libraryManager.ParseName(MemoryExtensions.AsSpan(name));
                 int? year1 = name1.Year;
                 name = name1.Name;
                 year = year ?? year1;
             }
-            List<RemoteSearchResult> searchResults = await this.GetSearchResults(name, searchType, year, language, country, idInfo.EnableAdultMetadata, tmdbImageUrl, cancellationToken).ConfigureAwait(false);
+            List<RemoteSearchResult> searchResults = await GetSearchResults(name, searchType, year, language, country, idInfo.EnableAdultMetadata, tmdbImageUrl, cancellationToken).ConfigureAwait(false);
             if (searchResults.Count == 0)
             {
                 string b = name;
@@ -128,7 +128,7 @@ namespace MovieDbWithProxy
                 }
                 name = name.Trim();
                 if (!string.Equals(name, b, StringComparison.OrdinalIgnoreCase))
-                    searchResults = await this.GetSearchResults(name, searchType, year, language, country, idInfo.EnableAdultMetadata, tmdbImageUrl, cancellationToken).ConfigureAwait(false);
+                    searchResults = await GetSearchResults(name, searchType, year, language, country, idInfo.EnableAdultMetadata, tmdbImageUrl, cancellationToken).ConfigureAwait(false);
             }
             return searchResults;
         }
@@ -143,7 +143,7 @@ namespace MovieDbWithProxy
           string baseImageUrl,
           CancellationToken cancellationToken)
         {
-            return type == "tv" ? this.GetSearchResultsTv(name, year, language, country, includeAdult, baseImageUrl, cancellationToken) : this.GetSearchResultsGeneric(name, type, year, language, country, includeAdult, baseImageUrl, cancellationToken);
+            return type == "tv" ? GetSearchResultsTv(name, year, language, country, includeAdult, baseImageUrl, cancellationToken) : GetSearchResultsGeneric(name, type, year, language, country, includeAdult, baseImageUrl, cancellationToken);
         }
 
         public async Task<RemoteSearchResult> FindMovieByExternalId(
@@ -163,7 +163,7 @@ namespace MovieDbWithProxy
             {
                 using (Stream json = response.Content)
                 {
-                    MovieDbSearch.ExternalIdLookupResult externalIdLookupResult = await this._json.DeserializeFromStreamAsync<MovieDbSearch.ExternalIdLookupResult>(json).ConfigureAwait(false);
+                    MovieDbSearch.ExternalIdLookupResult externalIdLookupResult = await _json.DeserializeFromStreamAsync<MovieDbSearch.ExternalIdLookupResult>(json).ConfigureAwait(false);
                     if (externalIdLookupResult != null)
                     {
                         if (externalIdLookupResult.movie_results != null)
@@ -172,14 +172,13 @@ namespace MovieDbWithProxy
                             if (tv != null)
                             {
                                 string imageUrl = (await MovieDbProvider.Current.GetTmdbSettings(cancellationToken).ConfigureAwait(false)).images.GetImageUrl("original");
-                                return this.ParseMovieSearchResult(tv, imageUrl);
+                                return ParseMovieSearchResult(tv, imageUrl);
                             }
-                            tv = (MovieDbSearch.TmdbMovieSearchResult)null;
                         }
                     }
                 }
             }
-            return (RemoteSearchResult)null;
+            return null;
         }
 
         private async Task<List<RemoteSearchResult>> GetSearchResultsGeneric(
@@ -210,7 +209,7 @@ namespace MovieDbWithProxy
             }).ConfigureAwait(false))
             {
                 using (Stream json = response.Content)
-                    list = ((await this._json.DeserializeFromStreamAsync<MovieDbSearch.TmdbMovieSearchResults>(json).ConfigureAwait(false)).results ?? new List<MovieDbSearch.TmdbMovieSearchResult>()).Select<MovieDbSearch.TmdbMovieSearchResult, RemoteSearchResult>((Func<MovieDbSearch.TmdbMovieSearchResult, RemoteSearchResult>)(i => this.ParseMovieSearchResult(i, baseImageUrl))).Where<RemoteSearchResult>((Func<RemoteSearchResult, bool>)(i =>
+                    list = ((await _json.DeserializeFromStreamAsync<MovieDbSearch.TmdbMovieSearchResults>(json).ConfigureAwait(false)).results ?? new List<MovieDbSearch.TmdbMovieSearchResult>()).Select<MovieDbSearch.TmdbMovieSearchResult, RemoteSearchResult>((Func<MovieDbSearch.TmdbMovieSearchResult, RemoteSearchResult>)(i => ParseMovieSearchResult(i, baseImageUrl))).Where<RemoteSearchResult>((Func<RemoteSearchResult, bool>)(i =>
                     {
                         if (year.HasValue)
                         {
@@ -275,7 +274,7 @@ namespace MovieDbWithProxy
             }).ConfigureAwait(false))
             {
                 using (Stream json = response.Content)
-                    list = ((await this._json.DeserializeFromStreamAsync<MovieDbSearch.TmdbTvSearchResults>(json).ConfigureAwait(false)).results ?? new List<MovieDbSearch.TvResult>()).Select<MovieDbSearch.TvResult, RemoteSearchResult>((Func<MovieDbSearch.TvResult, RemoteSearchResult>)(i =>
+                    list = ((await _json.DeserializeFromStreamAsync<MovieDbSearch.TmdbTvSearchResults>(json).ConfigureAwait(false)).results ?? new List<MovieDbSearch.TvResult>()).Select<MovieDbSearch.TvResult, RemoteSearchResult>((Func<MovieDbSearch.TvResult, RemoteSearchResult>)(i =>
                     {
                         RemoteSearchResult searchResultsTv = new RemoteSearchResult()
                         {

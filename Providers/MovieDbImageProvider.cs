@@ -33,9 +33,7 @@ namespace MovieDbWithProxy
             _fileSystem = fileSystem;
         }
 
-        public string Name => MovieDbImageProvider.ProviderName;
-
-        public static string ProviderName => "TheMovieDb";
+        public string Name => "TheMovieDb (proxy)";        
 
         public bool Supports(BaseItem item)
         {

@@ -16,11 +16,12 @@ namespace MovieDbWithProxy
       IImageProvider,
       IHasOrder
     {
+        public string Name => "TheMovieDb (proxy)";
+
         private readonly IHttpClient _httpClient;
 
         public MovieDbBoxSetImageProvider(IHttpClient httpClient) => _httpClient = httpClient;
-
-        public string Name => "TheMovieDb";
+        
 
         public bool Supports(BaseItem item) => item is BoxSet;
 

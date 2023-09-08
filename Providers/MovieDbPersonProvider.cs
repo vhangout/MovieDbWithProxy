@@ -26,6 +26,8 @@ namespace MovieDbWithProxy
       IRemoteSearchProvider<PersonLookupInfo>,
       IRemoteSearchProvider
     {
+        public string Name => "TheMovieDb (proxy)";
+
         private readonly IJsonSerializer _jsonSerializer;
         private readonly IFileSystem _fileSystem;
         private readonly IServerConfigurationManager _configurationManager;
@@ -49,8 +51,6 @@ namespace MovieDbWithProxy
             _logger = logger;
             Current = this;
         }
-
-        public string Name => "TheMovieDb";
 
         public async Task<IEnumerable<RemoteSearchResult>> GetSearchResults(
           PersonLookupInfo searchInfo,

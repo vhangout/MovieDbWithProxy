@@ -17,6 +17,8 @@ namespace MovieDbWithProxy
       IRemoteSearchProvider,
       IHasMetadataFeatures
     {
+        public string Name => "TheMovieDb (proxy)";
+
         private readonly IHttpClient _httpClient;
 
         public MovieDbTrailerProvider(IHttpClient httpClient) => _httpClient = httpClient;
@@ -34,8 +36,6 @@ namespace MovieDbWithProxy
         {
             return MovieDbProvider.Current.GetItemMetadata<Trailer>(info, cancellationToken);
         }
-
-        public string Name => MovieDbProvider.Current.Name;
 
         public int Order => 0;
 

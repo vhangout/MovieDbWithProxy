@@ -15,6 +15,8 @@ namespace MovieDbWithProxy
       IRemoteSearchProvider,
       IHasMetadataFeatures
     {
+        public string Name => "TheMovieDb (proxy)";
+
         public Task<MetadataResult<MusicVideo>> GetMetadata(
           MusicVideoInfo info,
           CancellationToken cancellationToken)
@@ -28,8 +30,6 @@ namespace MovieDbWithProxy
         {
             return MovieDbProvider.Current.GetMovieSearchResults(searchInfo, cancellationToken);
         }
-
-        public string Name => MovieDbProvider.Current.Name;
 
         public Task<HttpResponseInfo> GetImageResponse(string url, CancellationToken cancellationToken) => throw new NotImplementedException();
 

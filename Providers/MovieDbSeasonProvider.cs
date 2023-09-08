@@ -29,14 +29,15 @@ namespace MovieDbWithProxy
       IRemoteSearchProvider,
       IHasMetadataFeatures
     {
+        public string Name => "TheMovieDb (proxy)";
+
         private const string GetTvInfo3 = "https://api.themoviedb.org/3/tv/{0}/season/{1}?api_key={2}&append_to_response=images,keywords,external_ids,credits,videos";
         private readonly IHttpClient _httpClient;
         private readonly IServerConfigurationManager _configurationManager;
         private readonly IJsonSerializer _jsonSerializer;
         private readonly IFileSystem _fileSystem;
         private readonly ILocalizationManager _localization;
-        private readonly ILogger _logger;
-        public string Name => "TheMovieDb";
+        private readonly ILogger _logger;        
 
         public MovieDbSeasonProvider(
       IHttpClient httpClient,
