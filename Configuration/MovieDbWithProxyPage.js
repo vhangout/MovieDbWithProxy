@@ -12,7 +12,10 @@
                 config.ProxyUrl = page.querySelector('#txtProxyUrl').value;
                 config.ProxyPort = page.querySelector('#txtProxyPort').value;
                 ApiClient.updateNamedConfiguration("moviedbwithproxy", config)
-                        .then(Dashboard.processServerConfigurationUpdateResult, displayError);                
+                    .then(Dashboard.processServerConfigurationUpdateResult,
+                        function (response) {
+                            response.text().then(text => Dashboard.alert({message: text}));
+                        });
             });
 
             e.preventDefault();
