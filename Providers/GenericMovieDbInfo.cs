@@ -22,12 +22,10 @@ namespace MovieDbWithProxy
         private readonly CultureInfo _usCulture = new CultureInfo("en-US");
 
         public GenericMovieDbInfo(
-          ILogger logger,
           IJsonSerializer jsonSerializer,
           ILibraryManager libraryManager,
           IFileSystem fileSystem)
         {
-            _logger = logger;
             _jsonSerializer = jsonSerializer;
             _libraryManager = libraryManager;
             _fileSystem = fileSystem;
@@ -41,7 +39,7 @@ namespace MovieDbWithProxy
             string imdbId = ProviderIdsExtensions.GetProviderId(itemId, (MetadataProviders)2);
             if (string.IsNullOrEmpty(tmdbId) && string.IsNullOrEmpty(imdbId))
             {
-                var remoteSearchResult = (await new MovieDbSearch(_logger, _jsonSerializer, _libraryManager).GetMovieSearchResults(itemId, cancellationToken).ConfigureAwait(false)).FirstOrDefault();
+                var remoteSearchResult = (await new MovieDbSearch(_jsonSerializer, _libraryManager).GetMovieSearchResults(itemId, cancellationToken).ConfigureAwait(false)).FirstOrDefault();
                 if (remoteSearchResult != null)
                     tmdbId = ProviderIdsExtensions.GetProviderId(remoteSearchResult, MetadataProviders.Tmdb);
             }

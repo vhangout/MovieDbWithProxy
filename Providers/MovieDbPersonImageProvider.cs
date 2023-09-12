@@ -23,17 +23,13 @@ namespace MovieDbWithProxy
 
         private readonly IServerConfigurationManager _config;
         private readonly IJsonSerializer _jsonSerializer;
-        private readonly IHttpClient _httpClient;
 
         public MovieDbPersonImageProvider(
           IServerConfigurationManager config,
-          IJsonSerializer jsonSerializer,
-          IHttpClient httpClient)
+          IJsonSerializer jsonSerializer)
         {
             _config = config;
             _jsonSerializer = jsonSerializer;
-            //_httpClient = httpClient;
-            _httpClient = HttpClientWithProxy.getInstance();
         }
 
         public bool Supports(BaseItem item) => item is Person;
@@ -92,7 +88,7 @@ namespace MovieDbWithProxy
 
         public int Order => 0;
 
-        public Task<HttpResponseInfo> GetImageResponse(string url, CancellationToken cancellationToken) => _httpClient.GetResponse(new HttpRequestOptions()
+        public Task<HttpResponseInfo> GetImageResponse(string url, CancellationToken cancellationToken) => EntryPoint.Current.HttpClient.GetResponse(new HttpRequestOptions()
         {
             CancellationToken = cancellationToken,
             Url = url

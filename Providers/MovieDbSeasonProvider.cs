@@ -33,28 +33,21 @@ namespace MovieDbWithProxy
         public string Name => Plugin.ProviderName;
 
         private const string GetTvInfo3 = "https://api.themoviedb.org/3/tv/{0}/season/{1}?api_key={2}&append_to_response=images,keywords,external_ids,credits,videos";
-        private readonly IHttpClient _httpClient;
         private readonly IServerConfigurationManager _configurationManager;
         private readonly IJsonSerializer _jsonSerializer;
         private readonly IFileSystem _fileSystem;
-        private readonly ILocalizationManager _localization;
-        private readonly ILogger _logger;        
+        private readonly ILocalizationManager _localization;    
 
         public MovieDbSeasonProvider(
-      IHttpClient httpClient,
       IServerConfigurationManager configurationManager,
       IFileSystem fileSystem,
       ILocalizationManager localization,
-      IJsonSerializer jsonSerializer,
-      ILogManager logManager)
+      IJsonSerializer jsonSerializer)
         {
-            //_httpClient = httpClient;
-            _httpClient = HttpClientWithProxy.getInstance();
             _configurationManager = configurationManager;
             _fileSystem = fileSystem;
             _localization = localization;
             _jsonSerializer = jsonSerializer;
-            _logger = logManager.GetLogger(GetType().Name);
         }
 
         public async Task<MetadataResult<Season>> GetMetadata(
@@ -116,7 +109,7 @@ namespace MovieDbWithProxy
             return Task.FromResult((IEnumerable<RemoteSearchResult>)new List<RemoteSearchResult>());
         }
 
-        public Task<HttpResponseInfo> GetImageResponse(string url, CancellationToken cancellationToken) => _httpClient.GetResponse(new HttpRequestOptions()
+        public Task<HttpResponseInfo> GetImageResponse(string url, CancellationToken cancellationToken) => EntryPoint.Current.HttpClient.GetResponse(new HttpRequestOptions()
         {
             CancellationToken = cancellationToken,
             Url = url

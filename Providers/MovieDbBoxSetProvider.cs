@@ -29,17 +29,14 @@ namespace MovieDbWithProxy
 
         private const string GetCollectionInfo3 = "https://api.themoviedb.org/3/collection/{0}?api_key={1}&append_to_response=images";
         internal static MovieDbBoxSetProvider Current;
-        private readonly ILogger _logger;
         private readonly IJsonSerializer _json;
         private readonly IServerConfigurationManager _config;
         private readonly IFileSystem _fileSystem;
         private readonly ILocalizationManager _localization;
-        private readonly IHttpClient _httpClient;
         private readonly ILibraryManager _libraryManager;
         private readonly CultureInfo _usCulture = new CultureInfo("en-US");
 
         public MovieDbBoxSetProvider(
-          ILogger logger,
           IJsonSerializer json,
           IServerConfigurationManager config,
           IFileSystem fileSystem,
@@ -47,13 +44,10 @@ namespace MovieDbWithProxy
           IHttpClient httpClient,
           ILibraryManager libraryManager)
         {
-            _logger = logger;
             _json = json;
             _config = config;
             _fileSystem = fileSystem;
             _localization = localization;
-            //_httpClient = httpClient;
-            _httpClient = HttpClientWithProxy.getInstance();
             _libraryManager = libraryManager;
             Current = this;
         }
@@ -64,7 +58,7 @@ namespace MovieDbWithProxy
         {
             string tmdbId = ProviderIdsExtensions.GetProviderId(searchInfo, MetadataProviders.Tmdb);
             if (string.IsNullOrEmpty(tmdbId))
-                return await new MovieDbSearch(_logger, _json, _libraryManager).GetCollectionSearchResults(searchInfo, cancellationToken).ConfigureAwait(false);
+                return await new MovieDbSearch(_json, _libraryManager).GetCollectionSearchResults(searchInfo, cancellationToken).ConfigureAwait(false);
             RootObject rootObject = await EnsureInfo(tmdbId, searchInfo.MetadataLanguage, searchInfo.MetadataCountryCode, cancellationToken).ConfigureAwait(false);
             RootObject info = await _json.DeserializeFromFileAsync<RootObject>(GetDataFilePath(_config.ApplicationPaths, tmdbId, searchInfo.MetadataLanguage)).ConfigureAwait(false);
             List<TmdbImage> images = (info.images ?? new Images()).posters ?? new List<TmdbImage>();
@@ -89,7 +83,7 @@ namespace MovieDbWithProxy
             string tmdbId = ProviderIdsExtensions.GetProviderId(id, MetadataProviders.Tmdb);
             if (string.IsNullOrEmpty(tmdbId))
             {
-                RemoteSearchResult remoteSearchResult = (await new MovieDbSearch(_logger, _json, _libraryManager).GetCollectionSearchResults(id, cancellationToken).ConfigureAwait(false)).FirstOrDefault();
+                RemoteSearchResult remoteSearchResult = (await new MovieDbSearch(_json, _libraryManager).GetCollectionSearchResults(id, cancellationToken).ConfigureAwait(false)).FirstOrDefault();
                 if (remoteSearchResult != null)
                     tmdbId = ProviderIdsExtensions.GetProviderId(remoteSearchResult, MetadataProviders.Tmdb);
             }
@@ -233,7 +227,7 @@ namespace MovieDbWithProxy
 
         private static string GetCollectionsDataPath(IApplicationPaths appPaths) => Path.Combine(appPaths.CachePath, "tmdb-collections");
 
-        public Task<HttpResponseInfo> GetImageResponse(string url, CancellationToken cancellationToken) => _httpClient.GetResponse(new HttpRequestOptions()
+        public Task<HttpResponseInfo> GetImageResponse(string url, CancellationToken cancellationToken) => EntryPoint.Current.HttpClient.GetResponse(new HttpRequestOptions()
         {
             CancellationToken = cancellationToken,
             Url = url

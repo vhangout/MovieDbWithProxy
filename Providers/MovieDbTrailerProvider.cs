@@ -20,10 +20,6 @@ namespace MovieDbWithProxy
     {
         public string Name => Plugin.ProviderName;
 
-        private readonly IHttpClient _httpClient;
-
-        public MovieDbTrailerProvider(IHttpClient httpClient) => _httpClient = HttpClientWithProxy.getInstance();
-
         public Task<IEnumerable<RemoteSearchResult>> GetSearchResults(
           TrailerInfo searchInfo,
           CancellationToken cancellationToken)
@@ -46,7 +42,7 @@ namespace MovieDbWithProxy
             MetadataFeatures.Collections
         };
 
-        public Task<HttpResponseInfo> GetImageResponse(string url, CancellationToken cancellationToken) => _httpClient.GetResponse(new HttpRequestOptions()
+        public Task<HttpResponseInfo> GetImageResponse(string url, CancellationToken cancellationToken) => EntryPoint.Current.HttpClient.GetResponse(new HttpRequestOptions()
         {
             CancellationToken = cancellationToken,
             Url = url

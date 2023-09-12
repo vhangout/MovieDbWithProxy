@@ -21,17 +21,13 @@ namespace MovieDbWithProxy
       IHasOrder
     {
         private readonly IJsonSerializer _jsonSerializer;
-        private readonly IHttpClient _httpClient;
         private readonly IFileSystem _fileSystem;
 
         public MovieDbImageProvider(
           IJsonSerializer jsonSerializer,
-          IHttpClient httpClient,
           IFileSystem fileSystem)
         {
             _jsonSerializer = jsonSerializer;
-            //_httpClient = httpClient;
-            _httpClient = HttpClientWithProxy.getInstance();
             _fileSystem = fileSystem;
         }
 
@@ -166,7 +162,7 @@ namespace MovieDbWithProxy
 
         public int Order => 0;
 
-        public Task<HttpResponseInfo> GetImageResponse(string url, CancellationToken cancellationToken) => _httpClient.GetResponse(new HttpRequestOptions()
+        public Task<HttpResponseInfo> GetImageResponse(string url, CancellationToken cancellationToken) => EntryPoint.Current.HttpClient.GetResponse(new HttpRequestOptions()
         {
             CancellationToken = cancellationToken,
             Url = url

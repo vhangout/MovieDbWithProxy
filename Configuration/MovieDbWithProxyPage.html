@@ -5,7 +5,7 @@
             <form class="movieDbWithProxyForm">
 
                 <div class="selectContainer">
-                    <label class="inputLabel" for="selectProxyType">Proxy type</label>
+                    <label class="inputLabel" for="selectProxyType">Proxy type <i class="md-icon" style="color:orange;">star</i></label>
                     <select is="emby-select" id="selectProxyType">
                         <option></option>
                         <option value="HTTP">HTTP</option>
@@ -15,13 +15,20 @@
                 </div>
 
                 <div class="inputContainer">
-                    <!-- <label class="inputLabel" for="txtProxyUrl">Proxy IP or DNS name</label> -->
-                    <input is="emby-input" type="text" id="txtProxyUrl" label="Proxy IP or DNS name" />
+                    <label class="inputLabel" for="txtProxyUrl">Proxy IP or DNS name <i class="md-icon" style="color:orange;">star</i></label>
+                    <input is="emby-input" type="text" id="txtProxyUrl"/>
                 </div>
 
                 <div class="inputContainer">
-                    <!-- <label class="inputLabel" for="txtProxyPort">Port</label> -->
-                    <input is="emby-input" type="text" id="txtProxyPort" label="Port" />
+                    <label class="inputLabel" for="txtProxyPort">Port <i class="md-icon" style="color:orange;">star</i></label>
+                    <input is="emby-input" type="text" id="txtProxyPort"/>
+                </div>
+                <div class="checkboxContainer checkboxContainer-withDescription">
+                    <label>
+                        <input type="checkbox" is="emby-checkbox" id="chkEnableDebugLogging" />
+                        <span>Enable Proxy debug logging</span>
+                    </label>
+                    <div class="fieldDescription checkboxFieldDescription">This will create large log files and should only be used as needed for troubleshooting purposes.</div>
                 </div>
 
                 <br />

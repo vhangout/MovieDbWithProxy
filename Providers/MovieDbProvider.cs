@@ -36,11 +36,9 @@ namespace MovieDbWithProxy
     {
         public string Name => Plugin.ProviderName;
 
-        private readonly IJsonSerializer _jsonSerializer;
-        private readonly IHttpClient _httpClient;
+        private readonly IJsonSerializer _jsonSerializer;        
         private readonly IFileSystem _fileSystem;
         private readonly IServerConfigurationManager _configurationManager;
-        private readonly ILogger _logger;
         private readonly ILocalizationManager _localization;
         private readonly ILibraryManager _libraryManager;
         private readonly IApplicationHost _appHost;
@@ -69,20 +67,15 @@ namespace MovieDbWithProxy
 
         public MovieDbProvider(
             IJsonSerializer jsonSerializer,
-            IHttpClient httpClient,
             IFileSystem fileSystem,
             IServerConfigurationManager configurationManager,
-            ILogger logger,
             ILocalizationManager localization,
             ILibraryManager libraryManager,
             IApplicationHost appHost)
         {
             _jsonSerializer = jsonSerializer;
-            //_httpClient = httpClient;
-            _httpClient = HttpClientWithProxy.getInstance();
             _fileSystem = fileSystem;
             _configurationManager = configurationManager;
-            _logger = logger;
             _localization = localization;
             _libraryManager = libraryManager;
             _appHost = appHost;
@@ -128,14 +121,14 @@ namespace MovieDbWithProxy
             string providerId2 = searchInfo.GetProviderId(MetadataProviders.Imdb);
             if (!string.IsNullOrEmpty(providerId2))
             {
-                RemoteSearchResult remoteSearchResult = await new MovieDbSearch(_logger, _jsonSerializer, _libraryManager).FindMovieByExternalId(providerId2, "imdb_id", MetadataProviders.Imdb.ToString(), cancellationToken).ConfigureAwait(false);
+                RemoteSearchResult remoteSearchResult = await new MovieDbSearch(_jsonSerializer, _libraryManager).FindMovieByExternalId(providerId2, "imdb_id", MetadataProviders.Imdb.ToString(), cancellationToken).ConfigureAwait(false);
                 if (remoteSearchResult != null)
                     return new RemoteSearchResult[1]
                     {
                         remoteSearchResult
                     };
             }
-            return await new MovieDbSearch(_logger, _jsonSerializer, _libraryManager).GetMovieSearchResults(searchInfo, cancellationToken).ConfigureAwait(false);
+            return await new MovieDbSearch(_jsonSerializer, _libraryManager).GetMovieSearchResults(searchInfo, cancellationToken).ConfigureAwait(false);
         }
         public Task<MetadataResult<Movie>> GetMetadata(
             MovieInfo info,
@@ -149,16 +142,14 @@ namespace MovieDbWithProxy
           CancellationToken cancellationToken)
           where T : BaseItem, new()
         {
-            return new GenericMovieDbInfo<T>(_logger, _jsonSerializer, _libraryManager, _fileSystem).GetMetadata(id, cancellationToken);
+            return new GenericMovieDbInfo<T>(_jsonSerializer, _libraryManager, _fileSystem).GetMetadata(id, cancellationToken);
         }
 
         internal async Task<TmdbSettingsResult> GetTmdbSettings(CancellationToken cancellationToken)
         {
-            MovieDbProvider movieDbProvider1 = this;
-            if (movieDbProvider1._tmdbSettings != null)
-                return movieDbProvider1._tmdbSettings;
-            MovieDbProvider movieDbProvider2 = movieDbProvider1;
-            using (HttpResponseInfo response = await movieDbProvider2.GetMovieDbResponse(new HttpRequestOptions()
+            if (_tmdbSettings != null)
+                return _tmdbSettings;            
+            using (HttpResponseInfo response = await GetMovieDbResponse(new HttpRequestOptions()
             {
                 Url = string.Format("https://api.themoviedb.org/3/configuration?api_key={0}", ApiKey),
                 CancellationToken = cancellationToken,
@@ -170,9 +161,9 @@ namespace MovieDbWithProxy
                     using (StreamReader reader = new StreamReader(json))
                     {
                         string text = await reader.ReadToEndAsync().ConfigureAwait(false);
-                        movieDbProvider1._logger.Info("MovieDb settings: {0}", text);
-                        movieDbProvider1._tmdbSettings = movieDbProvider1._jsonSerializer.DeserializeFromString<TmdbSettingsResult>(text);
-                        return movieDbProvider1._tmdbSettings;
+                        EntryPoint.Current.Log(this, LogSeverity.Info, "MovieDb settings: {0}", text);
+                        _tmdbSettings = _jsonSerializer.DeserializeFromString<TmdbSettingsResult>(text);
+                        return _tmdbSettings;
                     }
                 }
             }
@@ -360,18 +351,18 @@ namespace MovieDbWithProxy
             long num = Math.Min(((requestIntervalMs * 10000) - (DateTimeOffset.UtcNow.Ticks - _lastRequestTicks)) / 10000L, requestIntervalMs);
             if (num > 0L)
             {
-                _logger.Debug("Throttling Tmdb by {0} ms", num);
+                EntryPoint.Current.Log(this, LogSeverity.Info, "Throttling Tmdb by {0} ms", num);
                 await Task.Delay(Convert.ToInt32(num)).ConfigureAwait(false);
             }
             _lastRequestTicks = DateTimeOffset.UtcNow.Ticks;
             options.BufferContent = true;
             options.UserAgent = "Emby/" + _appHost.ApplicationVersion?.ToString();
-            return await _httpClient.SendAsync(options, "GET").ConfigureAwait(false);
+            return await EntryPoint.Current.HttpClient.SendAsync(options, "GET").ConfigureAwait(false);
         }
 
         public int Order => 1;
 
-        public Task<HttpResponseInfo> GetImageResponse(string url, CancellationToken cancellationToken) => _httpClient.GetResponse(new HttpRequestOptions()
+        public Task<HttpResponseInfo> GetImageResponse(string url, CancellationToken cancellationToken) => EntryPoint.Current.HttpClient.GetResponse(new HttpRequestOptions()
         {
             CancellationToken = cancellationToken,
             Url = url

@@ -15,7 +15,7 @@ namespace MovieDbWithProxy
 
     {
         public const string ConfigurationKey = "moviedbwithproxy";
-        public static string[] ConfigFields => new string[] { "ProxyType", "ProxyUrl", "ProxyPort" };
+        public static string[] ConfigFields => new string[] { "ProxyType", "ProxyUrl", "ProxyPort", "EnableDebugLog" };
         public static string[] ProxyTypes => new string[] { "", "HTTP", "SOCKS4", "SOCKS5" };
         private readonly ILogger _logger;
 

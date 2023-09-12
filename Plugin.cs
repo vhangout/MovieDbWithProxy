@@ -16,7 +16,7 @@ namespace MovieDbWithProxy
             Instance = this;
         }
 
-        public override string Name => Plugin.StaticName;
+        public override string Name => StaticName;
         public static string StaticName => "MovieDbWithProxy";
         public static string ProviderName => "TheMovieDb (proxy)";
 

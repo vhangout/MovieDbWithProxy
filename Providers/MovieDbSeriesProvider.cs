@@ -39,9 +39,7 @@ namespace MovieDbWithProxy
         private readonly IJsonSerializer _jsonSerializer;
         private readonly IFileSystem _fileSystem;
         private readonly IServerConfigurationManager _configurationManager;
-        private readonly ILogger _logger;
         private readonly ILocalizationManager _localization;
-        private readonly IHttpClient _httpClient;
         private readonly ILibraryManager _libraryManager;
 
         internal static MovieDbSeriesProvider Current { get; private set; }
@@ -50,18 +48,13 @@ namespace MovieDbWithProxy
           IJsonSerializer jsonSerializer,
           IFileSystem fileSystem,
           IServerConfigurationManager configurationManager,
-          ILogger logger,
           ILocalizationManager localization,
-          IHttpClient httpClient,
           ILibraryManager libraryManager)
         {
             _jsonSerializer = jsonSerializer;
             _fileSystem = fileSystem;
             _configurationManager = configurationManager;
-            _logger = logger;
             _localization = localization;
-            //_httpClient = httpClient;
-            _httpClient = HttpClientWithProxy.getInstance();
             _libraryManager = libraryManager;
             Current = this;
         }
@@ -132,7 +125,7 @@ namespace MovieDbWithProxy
             remoteSearchResult
           };
             }
-            ConfiguredTaskAwaitable<List<RemoteSearchResult>> configuredTaskAwaitable = new MovieDbSearch(dbSeriesProvider1._logger, dbSeriesProvider1._jsonSerializer, dbSeriesProvider1._libraryManager).GetSearchResults(searchInfo, cancellationToken).ConfigureAwait(false);
+            ConfiguredTaskAwaitable<List<RemoteSearchResult>> configuredTaskAwaitable = new MovieDbSearch(dbSeriesProvider1._jsonSerializer, dbSeriesProvider1._libraryManager).GetSearchResults(searchInfo, cancellationToken).ConfigureAwait(false);
             List<RemoteSearchResult> results = await configuredTaskAwaitable;
             configuredTaskAwaitable = dbSeriesProvider1.FilterSearchResults(results, searchInfo, searchInfo.MetadataLanguage, searchInfo.MetadataCountryCode, true, cancellationToken).ConfigureAwait(false);
             return await configuredTaskAwaitable;
@@ -167,7 +160,7 @@ namespace MovieDbWithProxy
           string country,
           CancellationToken cancellationToken)
         {
-            _logger.Debug("Checking AiredWithin for {0}. episodeAirDate: {1}", new object[2] { remoteSearchResult.Name, episodeAirDate.UtcDateTime.ToShortDateString() });
+            EntryPoint.Current.Log(this, LogSeverity.Info, "Checking AiredWithin for {0}. episodeAirDate: {1}", new object[2] { remoteSearchResult.Name, episodeAirDate.UtcDateTime.ToShortDateString() });
 
             if (!remoteSearchResult.PremiereDate.HasValue || episodeAirDate.Year < remoteSearchResult.PremiereDate.GetValueOrDefault().Year)
                 return false;
@@ -201,7 +194,7 @@ namespace MovieDbWithProxy
             {
                 objArray[2] = metadataResult.Item.EndDate.Value.UtcDateTime.ToShortDateString();
             }
-            _logger.Debug("AiredWithin for {0} Item.PremiereDate: {1}, Item.EndDate: {2}", objArray);
+            EntryPoint.Current.Log(this, LogSeverity.Info, "AiredWithin for {0} Item.PremiereDate: {1}, Item.EndDate: {2}", objArray);
 
             if (metadataResult.Item.PremiereDate == null)
                 return false;
@@ -258,7 +251,7 @@ namespace MovieDbWithProxy
             if (string.IsNullOrEmpty(tmdbId))
             {
                 result.QueriedById = false;
-                RemoteSearchResult remoteSearchResult = (await new MovieDbSearch(dbSeriesProvider1._logger, dbSeriesProvider1._jsonSerializer, dbSeriesProvider1._libraryManager).GetSearchResults(info, cancellationToken).ConfigureAwait(false)).FirstOrDefault();
+                RemoteSearchResult remoteSearchResult = (await new MovieDbSearch(dbSeriesProvider1._jsonSerializer, dbSeriesProvider1._libraryManager).GetSearchResults(info, cancellationToken).ConfigureAwait(false)).FirstOrDefault();
                 if (remoteSearchResult != null)
                     tmdbId = ProviderIdsExtensions.GetProviderId(remoteSearchResult, MetadataProviders.Tmdb);
             }
@@ -447,7 +440,7 @@ namespace MovieDbWithProxy
             cancellationToken.ThrowIfCancellationRequested();
             if (mainResult != null && !string.IsNullOrEmpty(language) && !string.Equals(language, "en", StringComparison.OrdinalIgnoreCase) && (string.IsNullOrEmpty(mainResult.overview) || GetTrailers(mainResult).Count == 0))
             {
-                _logger.Info("MovieDbSeriesProvider is incomplete for language " + language + ". Trying English...", Array.Empty<object>());
+                EntryPoint.Current.Log(this, LogSeverity.Info, "MovieDbSeriesProvider is incomplete for language " + language + ". Trying English...", Array.Empty<object>());
                 string str2 = MovieDbProvider.AddImageLanguageParam(string.Format("https://api.themoviedb.org/3/tv/{0}?api_key={1}&append_to_response=alternative_titles,reviews,credits,images,keywords,external_ids,videos,content_ratings", (object)id, (object)MovieDbProvider.ApiKey) + "&language=en", language, country);
                 response = await MovieDbProvider.Current.GetMovieDbResponse(new HttpRequestOptions()
                 {
@@ -545,7 +538,7 @@ namespace MovieDbWithProxy
 
         public int Order => 1;
 
-        public Task<HttpResponseInfo> GetImageResponse(string url, CancellationToken cancellationToken) => _httpClient.GetResponse(new HttpRequestOptions()
+        public Task<HttpResponseInfo> GetImageResponse(string url, CancellationToken cancellationToken) => EntryPoint.Current.HttpClient.GetResponse(new HttpRequestOptions()
         {
             CancellationToken = cancellationToken,
             Url = url

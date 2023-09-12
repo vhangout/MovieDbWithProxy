@@ -26,20 +26,15 @@ namespace MovieDbWithProxy
     {
         public string Name => Plugin.ProviderName;
 
-        private readonly IHttpClient _httpClient;
         private readonly MovieDbSeasonProvider _seasonProvider;
 
         public MovieDbSeasonImageProvider(
           IJsonSerializer jsonSerializer,
           IServerConfigurationManager configurationManager,
-          IHttpClient httpClient,
           IFileSystem fileSystem,
-          ILocalizationManager localization,
-          ILogManager logManager)
+          ILocalizationManager localization)
         {
-            //_httpClient = httpClient;
-            _httpClient = HttpClientWithProxy.getInstance();
-            _seasonProvider = new MovieDbSeasonProvider(httpClient, configurationManager, fileSystem, localization, jsonSerializer, logManager);
+            _seasonProvider = new MovieDbSeasonProvider(configurationManager, fileSystem, localization, jsonSerializer);
         }
 
         public bool Supports(BaseItem item) => item is Season;
@@ -100,7 +95,7 @@ namespace MovieDbWithProxy
 
         public int Order => 2;
 
-        public Task<HttpResponseInfo> GetImageResponse(string url, CancellationToken cancellationToken) => _httpClient.GetResponse(new HttpRequestOptions()
+        public Task<HttpResponseInfo> GetImageResponse(string url, CancellationToken cancellationToken) => EntryPoint.Current.HttpClient.GetResponse(new HttpRequestOptions()
         {
             CancellationToken = cancellationToken,
             Url = url

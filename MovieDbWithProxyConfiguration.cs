@@ -14,5 +14,6 @@ namespace MovieDbWithProxy
         public string? ProxyType { get; set; }
         public string? ProxyUrl { get; set; }
         public int? ProxyPort { get; set; }        
+        public bool? EnableDebugLog { get; set; }
     }
 }

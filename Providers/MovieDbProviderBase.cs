@@ -16,32 +16,23 @@ namespace MovieDbWithProxy
     public abstract class MovieDbProviderBase
     {
         private const string EpisodeUrlPattern = "https://api.themoviedb.org/3/tv/{0}/season/{1}/episode/{2}?api_key={3}&append_to_response=images,external_ids,credits,videos";
-        private readonly IHttpClient _httpClient;
         private readonly IServerConfigurationManager _configurationManager;
         private readonly IJsonSerializer _jsonSerializer;
         protected readonly IFileSystem FileSystem;
         private readonly ILocalizationManager _localization;
-        private readonly ILogger _logger;
         public static TimeSpan CacheTime = TimeSpan.FromHours(6.0);
 
         public MovieDbProviderBase(
-          IHttpClient httpClient,
           IServerConfigurationManager configurationManager,
           IJsonSerializer jsonSerializer,
           IFileSystem fileSystem,
-          ILocalizationManager localization,
-          ILogManager logManager)
+          ILocalizationManager localization)
         {
-            //_httpClient = httpClient;
-            _httpClient = HttpClientWithProxy.getInstance();
             _configurationManager = configurationManager;
             _jsonSerializer = jsonSerializer;
             FileSystem = fileSystem;
-            _localization = localization;
-            _logger = logManager.GetLogger(GetType().Name);
+            _localization = localization;            
         }
-
-        protected ILogger Logger => _logger;
 
         protected async Task<RootObject> GetEpisodeInfo(
           string tmdbId,
@@ -133,7 +124,7 @@ namespace MovieDbWithProxy
             return rootObject;
         }
 
-        protected Task<HttpResponseInfo> GetResponse(string url, CancellationToken cancellationToken) => _httpClient.GetResponse(new HttpRequestOptions()
+        protected Task<HttpResponseInfo> GetResponse(string url, CancellationToken cancellationToken) => EntryPoint.Current.HttpClient.GetResponse(new HttpRequestOptions()
         {
             CancellationToken = cancellationToken,
             Url = url

@@ -32,8 +32,6 @@ namespace MovieDbWithProxy
         private readonly IJsonSerializer _jsonSerializer;
         private readonly IFileSystem _fileSystem;
         private readonly IServerConfigurationManager _configurationManager;
-        private readonly IHttpClient _httpClient;
-        private readonly ILogger _logger;
         private readonly CultureInfo _usCulture = new CultureInfo("en-US");
 
         internal static MovieDbPersonProvider Current { get; private set; }
@@ -41,16 +39,11 @@ namespace MovieDbWithProxy
         public MovieDbPersonProvider(
           IFileSystem fileSystem,
           IServerConfigurationManager configurationManager,
-          IJsonSerializer jsonSerializer,
-          IHttpClient httpClient,
-          ILogger logger)
+          IJsonSerializer jsonSerializer)
         {
             _fileSystem = fileSystem;
             _configurationManager = configurationManager;
             _jsonSerializer = jsonSerializer;
-            //_httpClient = httpClient;
-            _httpClient = HttpClientWithProxy.getInstance();
-            _logger = logger;
             Current = this;
         }
 
@@ -268,7 +261,7 @@ namespace MovieDbWithProxy
 
             if (mainResult != null && !string.IsNullOrEmpty(language) && !string.Equals(language, "en", StringComparison.OrdinalIgnoreCase) && string.IsNullOrEmpty(mainResult.biography))
             {
-                _logger.Info("MovieDbPersonProvider metadata is incomplete for language " + language + ". Trying English...", Array.Empty<object>());
+                EntryPoint.Current.Log(this, LogSeverity.Info, "MovieDbPersonProvider metadata is incomplete for language " + language + ". Trying English...", Array.Empty<object>());
                 string str = GetPersonMetadataUrl(id) + string.Format("&language={0}", "en");
                 response = await MovieDbProvider.Current.GetMovieDbResponse(new HttpRequestOptions()
                 {
@@ -318,7 +311,7 @@ namespace MovieDbWithProxy
 
         private static string GetPersonsDataPath(IApplicationPaths appPaths) => Path.Combine(appPaths.CachePath, "tmdb-people");
 
-        public Task<HttpResponseInfo> GetImageResponse(string url, CancellationToken cancellationToken) => _httpClient.GetResponse(new HttpRequestOptions()
+        public Task<HttpResponseInfo> GetImageResponse(string url, CancellationToken cancellationToken) => EntryPoint.Current.HttpClient.GetResponse(new HttpRequestOptions()
         {
             CancellationToken = cancellationToken,
             Url = url

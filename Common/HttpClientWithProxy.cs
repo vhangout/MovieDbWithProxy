@@ -1,4 +1,5 @@
 ﻿using System.Collections.Concurrent;
+using System.Globalization;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Text;
@@ -14,31 +15,24 @@ namespace MovieDbWithProxy.Commons
 {
     internal class HttpClientWithProxy : IHttpClient
     {
-        private const int TimeoutSeconds = 30;
-        private readonly
-#nullable disable
-        ILogger _logger;
-        private readonly IApplicationPaths _appPaths;
-        private readonly IFileSystem _fileSystem;
-        private string _defaultUserAgent => "Emby";
-        private DateTimeOffset _lastTimeout;
+        private const int _timeoutSeconds = 30;
 
-        private readonly WebProxy _proxy;
+        private string _defaultUserAgent => "Emby";
+        private DateTimeOffset _lastTimeout;        
+
+        private readonly WebProxy? _proxy;
         private readonly HttpClientHandler _handler;
         private readonly HttpClient _httpClient;
 
-        private static HttpClientWithProxy instance;
-
-        private HttpClientWithProxy(ILogger logger)
+        public HttpClientWithProxy(MovieDbWithProxyConfiguration options)
         {
-            _logger = logger;
             _lastTimeout = DateTimeOffset.UtcNow;
-            _proxy = new WebProxy
+            _proxy = options.ProxyType != null ? new WebProxy
             {
-                Address = new Uri($"socks5://localhost:2080"),
+                Address = new Uri($"{options.ProxyType.ToLower()}://{options.ProxyUrl}:{options.ProxyPort}"),
                 BypassProxyOnLocal = false,
                 UseDefaultCredentials = false
-            };
+            } : null;
 
             _handler = new HttpClientHandler
             {
@@ -46,13 +40,7 @@ namespace MovieDbWithProxy.Commons
             };
 
             _httpClient = new HttpClient(_handler);
-        }
-
-        public static HttpClientWithProxy getInstance()
-        {
-            if (instance == null)
-                instance = new HttpClientWithProxy(null);
-            return instance;
+            EntryPoint.Current.Log(this, LogSeverity.Info, "Proxy init with: {0}, {1}, {2}", options.ProxyType, options.ProxyUrl, options.ProxyPort);
         }
 
         public async Task<HttpResponseInfo> SendAsync(MediaBrowser.Common.Net.HttpRequestOptions options, string httpMethod)
@@ -99,8 +87,8 @@ namespace MovieDbWithProxy.Commons
                     };
                 }
             }
-            
-            Log(LogSeverity.Info, "{0} {1}", httpMethod, GetLogUrl(options));
+
+            EntryPoint.Current.Log(this, LogSeverity.Info, "{0} {1}", httpMethod, GetLogUrl(options));
 
             DateTimeOffset now = DateTimeOffset.UtcNow;
             try
@@ -127,7 +115,7 @@ namespace MovieDbWithProxy.Commons
                         }
                     }
                 }
-                //await EnsureSuccessStatusCode(client, response, options, now, true).ConfigureAwait(false);
+                await EnsureSuccessStatusCode(response, options, now, true).ConfigureAwait(false);
                 cancellationToken = options.CancellationToken;
                 cancellationToken.ThrowIfCancellationRequested();
                 IDisposable[] disposableArray;
@@ -166,11 +154,11 @@ namespace MovieDbWithProxy.Commons
         }
 
         private HttpResponseInfo GetResponseInfo(
-      HttpResponseMessage httpResponse,
-      string requestedUrl,
-      Stream content,
-      long? contentLength,
-      IDisposable[] disposables)
+            HttpResponseMessage httpResponse,
+            string requestedUrl,
+            Stream content,
+            long? contentLength,
+            IDisposable[] disposables)
         {
             HttpResponseInfo responseInfo = new HttpResponseInfo(disposables)
             {
@@ -214,7 +202,7 @@ namespace MovieDbWithProxy.Commons
             string userInfo = new Uri(str).UserInfo;
             if (!string.IsNullOrWhiteSpace(userInfo))
             {
-                Log(LogSeverity.Info, "Found userInfo in url: {0} ... url: {1}", userInfo, GetLogUrl(options));
+                EntryPoint.Current.Log(this, LogSeverity.Info, "Found userInfo in url: {0} ... url: {1}", userInfo, GetLogUrl(options));
                 str = str.Replace(userInfo + "@", string.Empty);
             }
             HttpRequestMessage request = new HttpRequestMessage(new HttpMethod(method), str);
@@ -238,7 +226,7 @@ namespace MovieDbWithProxy.Commons
                     if (RangeHeaderValue.TryParse(keyValuePair.Value, out parsedValue))
                         request.Headers.Range = parsedValue;
                     else
-                        Log(LogSeverity.Debug, "Invalid range value {0}", keyValuePair.Value);
+                        EntryPoint.Current.Log(this, LogSeverity.Debug, "Invalid range value {0}", keyValuePair.Value);
                 }
                 else
                     request.Headers.TryAddWithoutValidation(keyValuePair.Key, keyValuePair.Value);
@@ -263,10 +251,72 @@ namespace MovieDbWithProxy.Commons
             request.Headers.TryAddWithoutValidation("User-Agent", userAgent);
         }
 
-        void Log(LogSeverity severity, string message, params object[] paramList)
+        private async Task EnsureSuccessStatusCode(
+      HttpResponseMessage response,
+      MediaBrowser.Common.Net.HttpRequestOptions options,
+      DateTimeOffset startDate,
+      bool disposeResponse)
         {
-            if (_logger != null)
-                _logger.Log(severity, message, paramList);
+            HttpStatusCode statusCode = response.StatusCode;
+            bool flag = statusCode >= HttpStatusCode.OK && statusCode <= (HttpStatusCode)399;
+            if (options.LogResponse)
+            {
+                string str1 = Math.Round((DateTimeOffset.UtcNow - startDate).TotalMilliseconds).ToString((IFormatProvider)CultureInfo.InvariantCulture);
+                if (options.LogResponseHeaders)
+                {
+                    List<KeyValuePair<string, IEnumerable<string>>> list = response.Headers.ToList<KeyValuePair<string, IEnumerable<string>>>();
+                    List<string> stringList = new List<string>();
+                    foreach (KeyValuePair<string, IEnumerable<string>> keyValuePair in list)
+                    {
+                        string str2 = string.Join(" ", keyValuePair.Value.ToArray<string>());
+                        if (options.Sanitation.ShouldSanitizeParam(keyValuePair.Key))
+                            stringList.Add(keyValuePair.Key + "=" + str2.MarkPrivate());
+                        else
+                            stringList.Add(keyValuePair.Key + "=" + str2);
+                    }
+                    EntryPoint.Current.Log(this, LogSeverity.Info, "Http response {0} from {1} after {2}ms. Headers{3}", (object)(int)statusCode, (object)this.GetLogUrl(options), (object)str1, (object)string.Join(", ", stringList.ToArray()));
+                }
+                else
+                    EntryPoint.Current.Log(this, LogSeverity.Info, "Http response {0} from {1} after {2}ms", (object)(int)statusCode, (object)this.GetLogUrl(options), (object)str1);
+            }
+            if (!flag)
+            {
+                string msg = (string)null;
+                if (options.LogErrorResponseBody)
+                {
+                    try
+                    {
+                        using (Stream stream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false))
+                        {
+                            if (stream != null)
+                            {
+                                using (StreamReader reader = new StreamReader(stream))
+                                {
+                                    msg = await reader.ReadToEndAsync().ConfigureAwait(false);
+                                    EntryPoint.Current.Log(this, LogSeverity.Error, msg);
+                                }
+                            }
+                        }
+                    }
+                    catch
+                    {
+                    }
+                }
+                if (disposeResponse)
+                {
+                    try
+                    {
+                        response.Dispose();
+                    }
+                    catch
+                    {
+                    }
+                }
+                throw new HttpException(msg ?? statusCode.ToString())
+                {
+                    StatusCode = new HttpStatusCode?(response.StatusCode)
+                };
+            }
         }
 
         private Exception GetException(Exception ex, MediaBrowser.Common.Net.HttpRequestOptions options)
@@ -316,7 +366,7 @@ namespace MovieDbWithProxy.Commons
             if (cancellationToken.IsCancellationRequested)
                 return exception;
             string message = string.Format("Connection to {0} timed out", options.Url);
-            Log(LogSeverity.Error, message);                
+            EntryPoint.Current.Log(this, LogSeverity.Error, message);                
             _lastTimeout = DateTimeOffset.UtcNow;
             return new HttpException(message, exception)
             {
@@ -333,25 +383,3 @@ namespace MovieDbWithProxy.Commons
     }
 
 }
-
-
-/*
- * using System.Net;
-
-var proxy = new WebProxy
-{
-    Address = new Uri("socks5://localhost:2080"),
-    BypassProxyOnLocal = false,
-    UseDefaultCredentials = false,
-};
-
-var handler = new HttpClientHandler
-{
-    Proxy = proxy
-};
-
-var httpClient = new HttpClient(handler);
-
-var result = await httpClient.GetStringAsync("https://api.ipify.org/");
-Console.WriteLine(result);
-*/

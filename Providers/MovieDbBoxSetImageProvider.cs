@@ -17,12 +17,7 @@ namespace MovieDbWithProxy
       IImageProvider,
       IHasOrder
     {
-        public string Name => Plugin.ProviderName;
-
-        private readonly IHttpClient _httpClient;
-
-        public MovieDbBoxSetImageProvider(IHttpClient httpClient) => _httpClient = HttpClientWithProxy.getInstance();
-        
+        public string Name => Plugin.ProviderName;        
 
         public bool Supports(BaseItem item) => item is BoxSet;
 
@@ -115,7 +110,7 @@ namespace MovieDbWithProxy
 
         public int Order => 0;
 
-        public Task<HttpResponseInfo> GetImageResponse(string url, CancellationToken cancellationToken) => _httpClient.GetResponse(new HttpRequestOptions()
+        public Task<HttpResponseInfo> GetImageResponse(string url, CancellationToken cancellationToken) => EntryPoint.Current.HttpClient.GetResponse(new HttpRequestOptions()
         {
             CancellationToken = cancellationToken,
             Url = url

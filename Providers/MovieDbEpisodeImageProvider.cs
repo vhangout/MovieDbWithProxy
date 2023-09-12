@@ -29,13 +29,11 @@ namespace MovieDbWithProxy
         public string Name => Plugin.ProviderName;
 
         public MovieDbEpisodeImageProvider(
-          IHttpClient httpClient,
           IServerConfigurationManager configurationManager,
           IJsonSerializer jsonSerializer,
           IFileSystem fileSystem,
-          ILocalizationManager localization,
-          ILogManager logManager)
-          : base(httpClient, configurationManager, jsonSerializer, fileSystem, localization, logManager)
+          ILocalizationManager localization)
+          : base(configurationManager, jsonSerializer, fileSystem, localization)
         {
         }
 

@@ -11,6 +11,7 @@
                 config.ProxyType = $('#selectProxyType', page).val();
                 config.ProxyUrl = page.querySelector('#txtProxyUrl').value;
                 config.ProxyPort = page.querySelector('#txtProxyPort').value;
+                config.EnableDebugLog = form.querySelector('#chkEnableDebugLogging').checked;
                 ApiClient.updateNamedConfiguration("moviedbwithproxy", config)
                     .then(Dashboard.processServerConfigurationUpdateResult,
                         function (response) {
@@ -40,9 +41,8 @@
                 $('#selectProxyType', page).val(config.ProxyType || '').change();                
                 page.querySelector('#txtProxyUrl').value = config.ProxyUrl || '';
                 page.querySelector('#txtProxyPort').value = config.ProxyPort || '';
-                
+                page.querySelector('#chkEnableDebugLogging').checked = config.EnableDebugLog;
                 loading.hide();
-
             });
         });
     };
