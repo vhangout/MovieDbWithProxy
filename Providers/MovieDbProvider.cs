@@ -21,6 +21,7 @@ using MediaBrowser.Model.Configuration;
 using MovieDbWithProxy.Models;
 using HttpRequestOptions = MediaBrowser.Common.Net.HttpRequestOptions;
 using MovieDbWithProxy.Commons;
+using static System.Net.WebRequestMethods;
 
 namespace MovieDbWithProxy
 {
@@ -162,7 +163,7 @@ namespace MovieDbWithProxy
                     {
                         string text = await reader.ReadToEndAsync().ConfigureAwait(false);
                         EntryPoint.Current.Log(this, LogSeverity.Info, "MovieDb settings: {0}", text);
-                        _tmdbSettings = _jsonSerializer.DeserializeFromString<TmdbSettingsResult>(text);
+                        _tmdbSettings = _jsonSerializer.DeserializeFromString<TmdbSettingsResult>(text);                        
                         return _tmdbSettings;
                     }
                 }
@@ -362,10 +363,14 @@ namespace MovieDbWithProxy
 
         public int Order => 1;
 
-        public Task<HttpResponseInfo> GetImageResponse(string url, CancellationToken cancellationToken) => EntryPoint.Current.HttpClient.GetResponse(new HttpRequestOptions()
+        public Task<HttpResponseInfo> GetImageResponse(string url, CancellationToken cancellationToken)
         {
-            CancellationToken = cancellationToken,
-            Url = url
-        });
+            EntryPoint.Current.Log(this, LogSeverity.Info, "*** => {0}", url);
+            return EntryPoint.Current.HttpClient.GetResponse(new HttpRequestOptions()
+            {
+                CancellationToken = cancellationToken,
+                Url = url
+            });
+        }
     }
 }

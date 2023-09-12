@@ -46,6 +46,7 @@ namespace MovieDbWithProxy
           RemoteImageFetchOptions options,
           CancellationToken cancellationToken)
         {
+            EntryPoint.Current.Log(this, LogSeverity.Info, "{0}", options.Item);
             MovieDbEpisodeImageProvider episodeImageProvider = this;
             BaseItem baseItem = options.Item;
             LibraryOptions libraryOptions = options.LibraryOptions;

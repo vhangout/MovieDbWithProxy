@@ -35,8 +35,8 @@ namespace MovieDbWithProxy
           ItemLookupInfo itemId,
           CancellationToken cancellationToken)
         {
-            string tmdbId = ProviderIdsExtensions.GetProviderId(itemId, (MetadataProviders)3);
-            string imdbId = ProviderIdsExtensions.GetProviderId(itemId, (MetadataProviders)2);
+            string tmdbId = ProviderIdsExtensions.GetProviderId(itemId, MetadataProviders.Tmdb);
+            string imdbId = ProviderIdsExtensions.GetProviderId(itemId, MetadataProviders.Imdb);
             if (string.IsNullOrEmpty(tmdbId) && string.IsNullOrEmpty(imdbId))
             {
                 var remoteSearchResult = (await new MovieDbSearch(_jsonSerializer, _libraryManager).GetMovieSearchResults(itemId, cancellationToken).ConfigureAwait(false)).FirstOrDefault();
@@ -56,6 +56,7 @@ namespace MovieDbWithProxy
           string preferredCountryCode,
           CancellationToken cancellationToken)
         {
+            EntryPoint.Current.Log(this, LogSeverity.Info, "*** CALL ***");
             MetadataResult<T> item = new MetadataResult<T>()
             {
                 Item = new T()
@@ -91,6 +92,7 @@ namespace MovieDbWithProxy
           string preferredCountryCode,
           CompleteMovieData movieData)
         {
+            EntryPoint.Current.Log(this, LogSeverity.Info, "*** CALL ***");
             T obj = resultItem.Item;
             obj.Name = movieData.GetTitle() ?? obj.Name;
             obj.OriginalTitle = movieData.GetOriginalTitle();

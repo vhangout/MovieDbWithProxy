@@ -1,11 +1,15 @@
 ﻿using MediaBrowser.Common.Net;
 using MediaBrowser.Controller.Library;
 using MediaBrowser.Controller.Providers;
+using MediaBrowser.Controller.Security;
 using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.Logging;
 using MediaBrowser.Model.Providers;
+using MediaBrowser.Model.Querying;
 using MediaBrowser.Model.Serialization;
+using MediaBrowser.Model.Services;
 using MovieDbWithProxy.Models;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Net;
 using HttpRequestOptions = MediaBrowser.Common.Net.HttpRequestOptions;
@@ -63,8 +67,7 @@ namespace MovieDbWithProxy
             List<RemoteSearchResult> searchResults = await GetSearchResults(idInfo, searchType, language, country, tmdbSettings, cancellationToken).ConfigureAwait(false);
             if (searchResults.Count == 0 && !string.Equals(language, "en", StringComparison.OrdinalIgnoreCase))
             {
-                language = "en";
-                searchResults = await GetSearchResults(idInfo, searchType, language, country, tmdbSettings, cancellationToken).ConfigureAwait(false);
+                searchResults = await GetSearchResults(idInfo, searchType, "en", country, tmdbSettings, cancellationToken).ConfigureAwait(false);
             }
             return searchResults;
         }
@@ -141,7 +144,9 @@ namespace MovieDbWithProxy
           string baseImageUrl,
           CancellationToken cancellationToken)
         {
-            return type == "tv" ? GetSearchResultsTv(name, year, language, country, includeAdult, baseImageUrl, cancellationToken) : GetSearchResultsGeneric(name, type, year, language, country, includeAdult, baseImageUrl, cancellationToken);
+            return type == "tv" ? 
+                GetSearchResultsTv(name, year, language, country, includeAdult, baseImageUrl, cancellationToken) : 
+                GetSearchResultsGeneric(name, type, year, language, country, includeAdult, baseImageUrl, cancellationToken);
         }
 
         public async Task<RemoteSearchResult> FindMovieByExternalId(
@@ -197,17 +202,16 @@ namespace MovieDbWithProxy
             bool enableOneYearTolerance = false;
             if (!enableOneYearTolerance && year.HasValue)
                 str = str + "&year=" + year.Value.ToString(CultureInfo.InvariantCulture);
-            MovieDbProvider current = MovieDbProvider.Current;
             List<RemoteSearchResult> list;
-            using (HttpResponseInfo response = await current.GetMovieDbResponse(new HttpRequestOptions()
+            using (HttpResponseInfo response = await MovieDbProvider.Current.GetMovieDbResponse(new HttpRequestOptions()
             {
                 Url = str,
                 CancellationToken = cancellationToken,
                 AcceptHeader = AcceptHeader
             }).ConfigureAwait(false))
-            {
+            {                
                 using (Stream json = response.Content)
-                    list = ((await _json.DeserializeFromStreamAsync<TmdbMovieSearchResults>(json).ConfigureAwait(false)).results ?? new List<TmdbMovieSearchResult>()).Select<TmdbMovieSearchResult, RemoteSearchResult>((Func<TmdbMovieSearchResult, RemoteSearchResult>)(i => ParseMovieSearchResult(i, baseImageUrl))).Where<RemoteSearchResult>((Func<RemoteSearchResult, bool>)(i =>
+                    list = ((await _json.DeserializeFromStreamAsync<TmdbMovieSearchResults>(json).ConfigureAwait(false)).results ?? new List<TmdbMovieSearchResult>()).Select(i => ParseMovieSearchResult(i, baseImageUrl)).Where(i =>
                     {
                         if (year.HasValue)
                         {
@@ -221,7 +225,7 @@ namespace MovieDbWithProxy
                             }
                         }
                         return true;
-                    })).ToList<RemoteSearchResult>();
+                    }).ToList();                
             }
             return list;
         }
@@ -230,11 +234,23 @@ namespace MovieDbWithProxy
           TmdbMovieSearchResult i,
           string baseImageUrl)
         {
+            
+            QueryResult<AuthenticationInfo> queryResult = EntryPoint.Current.AuthRepo.Get(new AuthenticationInfoQuery()
+            {                
+                IsActive = new bool?(true)
+            });
+            string accessToken = queryResult.Items.Length != 0 ? queryResult.Items[0].AccessToken : null;
+            EntryPoint.Current.Log(this, LogSeverity.Info, "{0}\n{1}\n{2}",
+            EntryPoint.Current.ServerConfiguration.Configuration.RequireHttps ? "http://" : "https://",
+            EntryPoint.Current.ServerConfiguration.Configuration.LocalNetworkAddresses,
+            EntryPoint.Current.ServerConfiguration.Configuration.PublicPort);
+
             RemoteSearchResult movieSearchResult = new RemoteSearchResult()
             {
                 SearchProviderName = MovieDbProvider.Current.Name,
                 Name = i.title ?? i.name ?? i.original_title,
-                ImageUrl = string.IsNullOrWhiteSpace(i.poster_path) ? (string)null : baseImageUrl + i.poster_path
+                ImageUrl = string.IsNullOrWhiteSpace(i.poster_path) ? null : //baseImageUrl + i.poster_path
+                    $"http://localhost:8096/emby/Items/RemoteSearch/Image?imageUrl={baseImageUrl}{i.poster_path}&ProviderName={Plugin.ProviderName}&api_key={accessToken}"
             };
             DateTimeOffset result;
             if (!string.IsNullOrEmpty(i.release_date) && DateTimeOffset.TryParseExact(i.release_date, "yyyy-MM-dd", (IFormatProvider)EnUs, DateTimeStyles.None, out result))

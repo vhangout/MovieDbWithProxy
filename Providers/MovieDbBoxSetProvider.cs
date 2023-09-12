@@ -56,6 +56,7 @@ namespace MovieDbWithProxy
           ItemLookupInfo searchInfo,
           CancellationToken cancellationToken)
         {
+            EntryPoint.Current.Log(this, LogSeverity.Info, "*** CALL ***");
             string tmdbId = ProviderIdsExtensions.GetProviderId(searchInfo, MetadataProviders.Tmdb);
             if (string.IsNullOrEmpty(tmdbId))
                 return await new MovieDbSearch(_json, _libraryManager).GetCollectionSearchResults(searchInfo, cancellationToken).ConfigureAwait(false);
@@ -80,6 +81,7 @@ namespace MovieDbWithProxy
           ItemLookupInfo id,
           CancellationToken cancellationToken)
         {
+            EntryPoint.Current.Log(this, LogSeverity.Info, "*** CALL ***");
             string tmdbId = ProviderIdsExtensions.GetProviderId(id, MetadataProviders.Tmdb);
             if (string.IsNullOrEmpty(tmdbId))
             {
@@ -106,6 +108,7 @@ namespace MovieDbWithProxy
           string preferredMetadataCountry,
           CancellationToken cancellationToken)
         {
+            EntryPoint.Current.Log(this, LogSeverity.Info, "*** CALL ***");
             if (string.IsNullOrEmpty(tmdbId))
                 throw new ArgumentNullException(nameof(tmdbId));
             return EnsureInfo(tmdbId, preferredMetadataLanguage, preferredMetadataCountry, cancellationToken);
@@ -141,6 +144,7 @@ namespace MovieDbWithProxy
           string preferredMetadataCountry,
           CancellationToken cancellationToken)
         {
+            EntryPoint.Current.Log(this, LogSeverity.Info, "*** CALL ***");
             string url = string.Format("https://api.themoviedb.org/3/collection/{0}?api_key={1}&append_to_response=images", id, MovieDbProvider.ApiKey);
             if (!string.IsNullOrEmpty(metadataLanguage))
                 url += string.Format("&language={0}", MovieDbProvider.NormalizeLanguage(metadataLanguage, preferredMetadataCountry));
@@ -228,10 +232,10 @@ namespace MovieDbWithProxy
         private static string GetCollectionsDataPath(IApplicationPaths appPaths) => Path.Combine(appPaths.CachePath, "tmdb-collections");
 
         public Task<HttpResponseInfo> GetImageResponse(string url, CancellationToken cancellationToken) => EntryPoint.Current.HttpClient.GetResponse(new HttpRequestOptions()
-        {
-            CancellationToken = cancellationToken,
-            Url = url
-        });
+            {
+                CancellationToken = cancellationToken,
+                Url = url
+            });
 
         internal class Part
         {

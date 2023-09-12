@@ -48,6 +48,7 @@ namespace MovieDbWithProxy
           RemoteImageFetchOptions options,
           CancellationToken cancellationToken)
         {
+            EntryPoint.Current.Log(this, LogSeverity.Info, "{0}", options.Item);
             BaseItem baseItem = options.Item;
             List<RemoteImageInfo> list = new List<RemoteImageInfo>();
             Season season = (Season)baseItem;

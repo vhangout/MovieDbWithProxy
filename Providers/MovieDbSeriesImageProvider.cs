@@ -6,6 +6,7 @@ using MediaBrowser.Model.Configuration;
 using MediaBrowser.Model.Dto;
 using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.IO;
+using MediaBrowser.Model.Logging;
 using MediaBrowser.Model.Providers;
 using MediaBrowser.Model.Serialization;
 using MovieDbWithProxy.Commons;
@@ -46,6 +47,7 @@ namespace MovieDbWithProxy
           RemoteImageFetchOptions options,
           CancellationToken cancellationToken)
         {
+            EntryPoint.Current.Log(this, LogSeverity.Info, "{0}", options.Item);
             List<RemoteImageInfo> list = new List<RemoteImageInfo>();
             MovieDbSeriesProvider.Images results = await FetchImages(options.Item, null, null, _jsonSerializer, cancellationToken).ConfigureAwait(false);
             if (results == null)

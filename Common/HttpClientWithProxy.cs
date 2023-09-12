@@ -18,7 +18,7 @@ namespace MovieDbWithProxy.Commons
         private const int _timeoutSeconds = 30;
 
         private string _defaultUserAgent => "Emby";
-        private DateTimeOffset _lastTimeout;        
+        private DateTimeOffset _lastTimeout;
 
         private readonly WebProxy? _proxy;
         private readonly HttpClientHandler _handler;
@@ -45,6 +45,7 @@ namespace MovieDbWithProxy.Commons
 
         public async Task<HttpResponseInfo> SendAsync(MediaBrowser.Common.Net.HttpRequestOptions options, string httpMethod)
         {
+            //EntryPoint.Current.Log(this, LogSeverity.Info, "{0}", new System.Diagnostics.StackTrace().ToString());
             ValidateParams(options);
             CancellationToken cancellationToken = options.CancellationToken;
             cancellationToken.ThrowIfCancellationRequested();
@@ -321,41 +322,30 @@ namespace MovieDbWithProxy.Commons
 
         private Exception GetException(Exception ex, MediaBrowser.Common.Net.HttpRequestOptions options)
         {
+            if (ex.InnerException is WebException)
+            {
+                var innerException = ex.InnerException as WebException;
+                EntryPoint.Current.Log(this, LogSeverity.Error, "Error " + innerException.Status.ToString() + " getting response from " + GetLogUrl(options), (Exception)innerException);
+                HttpException exception = new HttpException(innerException.Message, innerException);
+                if (innerException.Response is HttpWebResponse response)
+                {
+                    exception.StatusCode = new HttpStatusCode?(response.StatusCode);
+                    if (response.StatusCode == HttpStatusCode.TooManyRequests)
+                        _lastTimeout = DateTimeOffset.UtcNow;
+                }
+                if (!exception.StatusCode.HasValue && (innerException.Status == WebExceptionStatus.NameResolutionFailure || innerException.Status == WebExceptionStatus.ConnectFailure))
+                    exception.IsTimedOut = true;
+                return exception;
+            }
+            else if (ex.InnerException is OperationCanceledException)
+            {
+                var innerException = ex.InnerException as OperationCanceledException;
+                EntryPoint.Current.Log(this, LogSeverity.Error, "Error getting response from {0}", ex, GetLogUrl(options));
+                if (innerException != null)
+                    return GetCancellationException(options, options.CancellationToken, innerException);
+            }
+            EntryPoint.Current.Log(this, LogSeverity.Error, "Error getting response from {0}", ex, GetLogUrl(options));
             return ex;
-            /*            switch (ex)
-                        {
-                            case HttpException _:
-                                return ex;
-                            case WebException innerException2:
-             label_3:
-                                WebException innerException1 = innerException2;
-                                if (innerException1 != null)
-                                {
-                                    if (options.LogErrors)
-                                        _logger.ErrorException("Error " + innerException1.Status.ToString() + " getting response from " + GetLogUrl(options), (Exception)innerException1);
-                                    HttpException exception = new HttpException(innerException1.Message, (Exception)innerException1);
-                                    if (innerException1.Response is HttpWebResponse response)
-                                    {
-                                        exception.StatusCode = new HttpStatusCode?(response.StatusCode);
-                                        if (response.StatusCode == HttpStatusCode.TooManyRequests)
-                                            _lastTimeout = DateTimeOffset.UtcNow;
-                                    }
-                                    if (!exception.StatusCode.HasValue && (innerException1.Status == WebExceptionStatus.NameResolutionFailure || innerException1.Status == WebExceptionStatus.ConnectFailure))
-                                        exception.IsTimedOut = true;
-                                    return (Exception)exception;
-                                }
-                                if (!(ex is OperationCanceledException canceledException))
-                                    canceledException = ex.InnerException as OperationCanceledException;
-                                OperationCanceledException exception1 = canceledException;
-                                if (exception1 != null)
-                                    return GetCancellationException(options, client, options.CancellationToken, exception1);
-                                if (options.LogErrors)
-                                    _logger.ErrorException("Error getting response from {0}", ex, (object)GetLogUrl(options));
-                                return ex;
-                            default:
-                                innerException2 = ex.InnerException as WebException;
-                                goto label_3;
-                        }*/
         }
 
         private Exception GetCancellationException(
@@ -366,7 +356,7 @@ namespace MovieDbWithProxy.Commons
             if (cancellationToken.IsCancellationRequested)
                 return exception;
             string message = string.Format("Connection to {0} timed out", options.Url);
-            EntryPoint.Current.Log(this, LogSeverity.Error, message);                
+            EntryPoint.Current.Log(this, LogSeverity.Error, message);
             _lastTimeout = DateTimeOffset.UtcNow;
             return new HttpException(message, exception)
             {
