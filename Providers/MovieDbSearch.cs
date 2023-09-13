@@ -234,31 +234,28 @@ namespace MovieDbWithProxy
           TmdbMovieSearchResult i,
           string baseImageUrl)
         {
-            
+            //EntryPoint.Current.Log(this, LogSeverity.Info, "*** ParseMovieSearchResult ***");
+            //EntryPoint.Current.LogStack();
             QueryResult<AuthenticationInfo> queryResult = EntryPoint.Current.AuthRepo.Get(new AuthenticationInfoQuery()
             {                
                 IsActive = new bool?(true)
             });
             string accessToken = queryResult.Items.Length != 0 ? queryResult.Items[0].AccessToken : null;
-            EntryPoint.Current.Log(this, LogSeverity.Info, "{0}\n{1}\n{2}",
-            EntryPoint.Current.ServerConfiguration.Configuration.RequireHttps ? "http://" : "https://",
-            EntryPoint.Current.ServerConfiguration.Configuration.LocalNetworkAddresses,
-            EntryPoint.Current.ServerConfiguration.Configuration.PublicPort);
 
             RemoteSearchResult movieSearchResult = new RemoteSearchResult()
             {
-                SearchProviderName = MovieDbProvider.Current.Name,
+                SearchProviderName = Plugin.ProviderName,
                 Name = i.title ?? i.name ?? i.original_title,
-                ImageUrl = string.IsNullOrWhiteSpace(i.poster_path) ? null : //baseImageUrl + i.poster_path
-                    $"http://localhost:8096/emby/Items/RemoteSearch/Image?imageUrl={baseImageUrl}{i.poster_path}&ProviderName={Plugin.ProviderName}&api_key={accessToken}"
+                ImageUrl = string.IsNullOrWhiteSpace(i.poster_path) ? null : //i.poster_path
+               $"/emby/Items/RemoteSearch/Image?imageUrl={i.poster_path}&ProviderName={Plugin.ProviderName}&api_key={accessToken}"
             };
             DateTimeOffset result;
-            if (!string.IsNullOrEmpty(i.release_date) && DateTimeOffset.TryParseExact(i.release_date, "yyyy-MM-dd", (IFormatProvider)EnUs, DateTimeStyles.None, out result))
+            if (!string.IsNullOrEmpty(i.release_date) && DateTimeOffset.TryParseExact(i.release_date, "yyyy-MM-dd", EnUs, DateTimeStyles.None, out result))
             {
                 movieSearchResult.PremiereDate = new DateTimeOffset?(result.ToUniversalTime());
                 movieSearchResult.ProductionYear = new int?(movieSearchResult.PremiereDate.Value.Year);
             }
-            ProviderIdsExtensions.SetProviderId((IHasProviderIds)movieSearchResult, (MetadataProviders)3, i.id.ToString((IFormatProvider)EnUs));
+            ProviderIdsExtensions.SetProviderId(movieSearchResult, MetadataProviders.Tmdb, i.id.ToString(EnUs));
             return movieSearchResult;
         }
 

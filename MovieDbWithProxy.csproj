@@ -21,7 +21,7 @@
 	</ItemGroup>
 	
 	<PropertyGroup>
-		<PostBuildEvent>xcopy "$(SolutionDir)bin\Release\net6.0\MovieDbWithProxy.dll" "$(SolutionDir)..\..\Work\programdata\plugins\" /Y</PostBuildEvent>
+		<PostBuildEvent>xcopy "$(SolutionDir)bin\Release\net6.0\MovieDbWithProxy.dll" "$(SolutionDir)..\..\temp\programdata\plugins\" /Y</PostBuildEvent>
 	</PropertyGroup>
 
 </Project>

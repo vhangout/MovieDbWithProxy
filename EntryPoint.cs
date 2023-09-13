@@ -69,5 +69,11 @@ namespace MovieDbWithProxy
             if (_logger != null && options.EnableDebugLog != null && options.EnableDebugLog.Value)
                 _logger.Log(severity, $"{sender.GetType().Name}: {message}", paramList);
         }
+
+        public void LogStack()
+        {
+            if (_logger != null && options.EnableDebugLog != null && options.EnableDebugLog.Value)
+                _logger.Log(LogSeverity.Info, new System.Diagnostics.StackTrace(true).ToString());
+        }
     }
 }
