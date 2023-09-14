@@ -20,6 +20,7 @@ using MediaBrowser.Model.Extensions;
 using MediaBrowser.Model.Configuration;
 using MovieDbWithProxy.Models;
 using HttpRequestOptions = MediaBrowser.Common.Net.HttpRequestOptions;
+using System.Text.RegularExpressions;
 
 namespace MovieDbWithProxy
 {
@@ -57,6 +58,8 @@ namespace MovieDbWithProxy
         // The limit is 40 requests per 10 seconds
         private static int requestIntervalMs = 300;
 
+        protected readonly Regex _rgx;
+
         internal static MovieDbProvider Current { get; private set; }
 
         public MetadataFeatures[] Features => new MetadataFeatures[2]
@@ -81,16 +84,19 @@ namespace MovieDbWithProxy
             _localization = localization;
             _libraryManager = libraryManager;
             _appHost = appHost;
+            _rgx = new Regex(@"[\?&](([^&=]+)=([^&=#]*))");
             Current = this;
         }
 
         public Task<IEnumerable<RemoteSearchResult>> GetSearchResults(MovieInfo searchInfo, CancellationToken cancellationToken)
         {
+            EntryPoint.Current.LogCall();
             return GetMovieSearchResults(searchInfo, cancellationToken);
         }
 
         public async Task<IEnumerable<RemoteSearchResult>> GetMovieSearchResults(ItemLookupInfo searchInfo, CancellationToken cancellationToken)
         {
+            EntryPoint.Current.LogCall();
             var providerId1 = searchInfo.GetProviderId(MetadataProviders.Tmdb);
 
             if (!string.IsNullOrEmpty(providerId1))
@@ -136,6 +142,7 @@ namespace MovieDbWithProxy
             MovieInfo info,
             CancellationToken cancellationToken)
         {
+            EntryPoint.Current.LogCall();
             return GetItemMetadata<Movie>(info, cancellationToken);
         }
 
@@ -144,11 +151,13 @@ namespace MovieDbWithProxy
           CancellationToken cancellationToken)
           where T : BaseItem, new()
         {
+            EntryPoint.Current.LogCall();
             return new GenericMovieDbInfo<T>(_jsonSerializer, _libraryManager, _fileSystem).GetMetadata(id, cancellationToken);
         }
 
         internal async Task<TmdbSettingsResult> GetTmdbSettings(CancellationToken cancellationToken)
         {
+            EntryPoint.Current.LogCall();
             if (_tmdbSettings != null)
                 return _tmdbSettings;            
             using (HttpResponseInfo response = await GetMovieDbResponse(new HttpRequestOptions()
@@ -181,6 +190,7 @@ namespace MovieDbWithProxy
           string preferredMetadataCountry,
           CancellationToken cancellationToken)
         {
+            EntryPoint.Current.LogCall();
             CompleteMovieData completeMovieData = await FetchMainResult(id, true, preferredMetadataLanguage, preferredMetadataCountry, cancellationToken).ConfigureAwait(false);
             if (completeMovieData == null)
                 return null;
@@ -196,6 +206,7 @@ namespace MovieDbWithProxy
           string country,
           CancellationToken cancellationToken)
         {
+            EntryPoint.Current.LogCall();
             if (string.IsNullOrEmpty(tmdbId))
                 throw new ArgumentNullException(nameof(tmdbId));
             FileSystemMetadata fileSystemInfo = _fileSystem.GetFileSystemInfo(GetDataFilePath(tmdbId, language));
@@ -204,6 +215,7 @@ namespace MovieDbWithProxy
 
         internal string GetDataFilePath(string tmdbId, string preferredLanguage)
         {
+            EntryPoint.Current.LogCall();
             if (string.IsNullOrEmpty(tmdbId))
                 throw new ArgumentNullException(nameof(tmdbId));
             string movieDataPath = GetMovieDataPath(_configurationManager.ApplicationPaths, tmdbId);
@@ -260,6 +272,7 @@ namespace MovieDbWithProxy
           string country,
           CancellationToken cancellationToken)
         {
+            EntryPoint.Current.LogCall();
             MovieDbProvider movieDbProvider = this;
             string url = string.Format("https://api.themoviedb.org/3/movie/{0}?api_key={1}&append_to_response=alternative_titles,reviews,casts,releases,images,keywords,trailers", (object)id, (object)ApiKey);
             if (!string.IsNullOrEmpty(language))
@@ -350,6 +363,7 @@ namespace MovieDbWithProxy
 
         internal async Task<HttpResponseInfo> GetMovieDbResponse(HttpRequestOptions options)
         {
+            EntryPoint.Current.LogCall();
             long num = Math.Min(((requestIntervalMs * 10000) - (DateTimeOffset.UtcNow.Ticks - _lastRequestTicks)) / 10000L, requestIntervalMs);
             if (num > 0L)
             {
@@ -366,7 +380,17 @@ namespace MovieDbWithProxy
 
         public Task<HttpResponseInfo> GetImageResponse(string url, CancellationToken cancellationToken)
         {
-            EntryPoint.Current.Log(this, LogSeverity.Info, "*** => {0}", url);
+            EntryPoint.Current.LogCall();
+            EntryPoint.Current.Log(url);
+            if (url.StartsWith("/emby"))
+            {
+                url = _tmdbSettings.images.GetImageUrl("original") + _rgx.Match(url).Groups[3].Value;
+            }
+            else if (url.StartsWith("/"))
+            {
+                url = _tmdbSettings.images.GetImageUrl("original") + url;
+            }
+            EntryPoint.Current.Log(url);
             return _httpClient.GetResponse(new HttpRequestOptions()
             {
                 CancellationToken = cancellationToken,

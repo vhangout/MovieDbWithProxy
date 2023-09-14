@@ -8,7 +8,6 @@ using MediaBrowser.Model.Dto;
 using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.Globalization;
 using MediaBrowser.Model.IO;
-using MediaBrowser.Model.Logging;
 using MediaBrowser.Model.Net;
 using MediaBrowser.Model.Providers;
 using MediaBrowser.Model.Serialization;
@@ -45,7 +44,7 @@ namespace MovieDbWithProxy
           RemoteImageFetchOptions options,
           CancellationToken cancellationToken)
         {
-            EntryPoint.Current.Log(this, LogSeverity.Info, "{0}", options.Item);
+            EntryPoint.Current.LogCall();
             MovieDbEpisodeImageProvider episodeImageProvider = this;
             BaseItem baseItem = options.Item;
             LibraryOptions libraryOptions = options.LibraryOptions;
@@ -96,12 +95,16 @@ namespace MovieDbWithProxy
             throw new NotImplementedException();
         }
 
-        private IEnumerable<TmdbImage> GetPosters(Images images) => (IEnumerable<TmdbImage>)images.stills ?? new List<TmdbImage>();
-
-        public Task<HttpResponseInfo> GetImageResponse(string url, CancellationToken cancellationToken) => GetResponse(url, cancellationToken);
+        private IEnumerable<TmdbImage> GetPosters(Images images) => (IEnumerable<TmdbImage>)images.stills ?? new List<TmdbImage>();        
 
         public bool Supports(BaseItem item) => item is Episode;
 
         public int Order => 1;
+
+        public Task<HttpResponseInfo> GetImageResponse(string url, CancellationToken cancellationToken)
+        {
+            EntryPoint.Current.LogCall();
+            return MovieDbProvider.Current.GetImageResponse(url, cancellationToken);
+        }
     }
 }

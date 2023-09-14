@@ -6,7 +6,6 @@ using MediaBrowser.Model.Configuration;
 using MediaBrowser.Model.Dto;
 using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.IO;
-using MediaBrowser.Model.Logging;
 using MediaBrowser.Model.Providers;
 using MediaBrowser.Model.Serialization;
 using static MovieDbWithProxy.MovieDbProvider;
@@ -59,7 +58,7 @@ namespace MovieDbWithProxy
           RemoteImageFetchOptions options,
           CancellationToken cancellationToken)
         {
-            EntryPoint.Current.Log(this, LogSeverity.Info, "{0}", options.Item);
+            EntryPoint.Current.LogCall();
             BaseItem item = options.Item;
             List<RemoteImageInfo> list = new List<RemoteImageInfo>();
             MovieDbProvider.CompleteMovieData movieInfo = await GetMovieInfo(item, null, null, _jsonSerializer, cancellationToken).ConfigureAwait(false);
@@ -148,6 +147,7 @@ namespace MovieDbWithProxy
           IJsonSerializer jsonSerializer,
           CancellationToken cancellationToken)
         {
+            EntryPoint.Current.LogCall();
             string providerId1 = ProviderIdsExtensions.GetProviderId(item, MetadataProviders.Tmdb);
             if (string.IsNullOrWhiteSpace(providerId1))
             {
@@ -166,10 +166,15 @@ namespace MovieDbWithProxy
 
         public int Order => 0;
 
-        public Task<HttpResponseInfo> GetImageResponse(string url, CancellationToken cancellationToken) => _httpClient.GetResponse(new HttpRequestOptions()
+        public Task<HttpResponseInfo> GetImageResponse(string url, CancellationToken cancellationToken)
         {
-            CancellationToken = cancellationToken,
-            Url = url
-        });
+            EntryPoint.Current.LogCall();
+            EntryPoint.Current.Log(url);
+            return _httpClient.GetResponse(new HttpRequestOptions()
+            {
+                CancellationToken = cancellationToken,
+                Url = url
+            });
+        }
     }
 }

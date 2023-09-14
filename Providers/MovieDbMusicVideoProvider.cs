@@ -21,6 +21,7 @@ namespace MovieDbWithProxy
           MusicVideoInfo info,
           CancellationToken cancellationToken)
         {
+            EntryPoint.Current.LogCall();
             return MovieDbProvider.Current.GetItemMetadata<MusicVideo>(info, cancellationToken);
         }
 
@@ -28,6 +29,7 @@ namespace MovieDbWithProxy
           MusicVideoInfo searchInfo,
           CancellationToken cancellationToken)
         {
+            EntryPoint.Current.LogCall();
             return MovieDbProvider.Current.GetMovieSearchResults(searchInfo, cancellationToken);
         }
 

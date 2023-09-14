@@ -33,6 +33,7 @@ namespace MovieDbWithProxy
           SeriesInfo idInfo,
           CancellationToken cancellationToken)
         {
+            EntryPoint.Current.LogCall();
             return GetSearchResults(idInfo, "tv", cancellationToken);
         }
 
@@ -40,6 +41,7 @@ namespace MovieDbWithProxy
           ItemLookupInfo idInfo,
           CancellationToken cancellationToken)
         {
+            EntryPoint.Current.LogCall();
             return GetSearchResults(idInfo, "movie", cancellationToken);
         }
 
@@ -47,6 +49,7 @@ namespace MovieDbWithProxy
           ItemLookupInfo idInfo,
           CancellationToken cancellationToken)
         {
+            EntryPoint.Current.LogCall();
             return GetSearchResults(idInfo, "collection", cancellationToken);
         }
 
@@ -55,6 +58,7 @@ namespace MovieDbWithProxy
           string searchType,
           CancellationToken cancellationToken)
         {
+            EntryPoint.Current.LogCall();
             string name = idInfo.Name;
             if (string.IsNullOrEmpty(name))
                 return new List<RemoteSearchResult>();
@@ -78,6 +82,7 @@ namespace MovieDbWithProxy
           TmdbSettingsResult tmdbSettings,
           CancellationToken cancellationToken)
         {
+            EntryPoint.Current.LogCall();
             string name = idInfo.Name;
             int? year = idInfo.Year;
             if (string.IsNullOrEmpty(name))
@@ -142,6 +147,7 @@ namespace MovieDbWithProxy
           string baseImageUrl,
           CancellationToken cancellationToken)
         {
+            EntryPoint.Current.LogCall();
             return type == "tv" ? 
                 GetSearchResultsTv(name, year, language, country, includeAdult, baseImageUrl, cancellationToken) : 
                 GetSearchResultsGeneric(name, type, year, language, country, includeAdult, baseImageUrl, cancellationToken);
@@ -153,6 +159,7 @@ namespace MovieDbWithProxy
           string providerIdKey,
           CancellationToken cancellationToken)
         {
+            EntryPoint.Current.LogCall();
             string str = string.Format("https://api.themoviedb.org/3/find/{0}?api_key={1}&external_source={2}", (object)id, (object)MovieDbProvider.ApiKey, (object)externalSource);
             MovieDbProvider current = MovieDbProvider.Current;
             using (HttpResponseInfo response = await current.GetMovieDbResponse(new HttpRequestOptions()
@@ -192,6 +199,7 @@ namespace MovieDbWithProxy
           string baseImageUrl,
           CancellationToken cancellationToken)
         {
+            EntryPoint.Current.LogCall();
             if (string.IsNullOrEmpty(name))
                 throw new ArgumentException(nameof(name));
             string str = string.Format("https://api.themoviedb.org/3/search/{3}?api_key={1}&query={0}&language={2}", (object)WebUtility.UrlEncode(name), (object)ApiKey, (object)MovieDbProvider.NormalizeLanguage(language, country), (object)type);
@@ -232,8 +240,7 @@ namespace MovieDbWithProxy
           TmdbMovieSearchResult i,
           string baseImageUrl)
         {
-            //EntryPoint.Current.Log(this, LogSeverity.Info, "*** ParseMovieSearchResult ***");
-            //EntryPoint.Current.LogStack();
+            EntryPoint.Current.LogCall();
             QueryResult<AuthenticationInfo> queryResult = EntryPoint.Current.AuthRepo.Get(new AuthenticationInfoQuery()
             {                
                 IsActive = new bool?(true)
@@ -266,6 +273,7 @@ namespace MovieDbWithProxy
           string baseImageUrl,
           CancellationToken cancellationToken)
         {
+            EntryPoint.Current.LogCall();
             if (string.IsNullOrEmpty(name))
                 throw new ArgumentException(nameof(name));
             string str = string.Format("https://api.themoviedb.org/3/search/{3}?api_key={1}&query={0}&language={2}", (object)WebUtility.UrlEncode(name), (object)ApiKey, (object)MovieDbProvider.NormalizeLanguage(language, country), (object)"tv");

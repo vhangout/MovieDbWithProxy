@@ -43,6 +43,7 @@ namespace MovieDbWithProxy
           IDirectoryService directoryService,
           CancellationToken cancellationToken)
         {
+            EntryPoint.Current.LogCall();
             if (string.IsNullOrEmpty(tmdbId))
                 throw new ArgumentNullException(nameof(tmdbId));
             if (string.IsNullOrEmpty(language))
@@ -89,6 +90,7 @@ namespace MovieDbWithProxy
           string dataFilePath,
           CancellationToken cancellationToken)
         {
+            EntryPoint.Current.LogCall();
             RootObject rootObject = await FetchMainResult("https://api.themoviedb.org/3/tv/{0}/season/{1}/episode/{2}?api_key={3}&append_to_response=images,external_ids,credits,videos", id, seasonNumber, episodeNumber, preferredMetadataLanguage, preferredMetadataCountry, cancellationToken).ConfigureAwait(false);
             FileSystem.CreateDirectory(FileSystem.GetDirectoryName(dataFilePath));
             _jsonSerializer.SerializeToFile(rootObject, dataFilePath);
@@ -104,6 +106,7 @@ namespace MovieDbWithProxy
           string country,
           CancellationToken cancellationToken)
         {
+            EntryPoint.Current.LogCall();
             string url = string.Format(urlPattern, id, seasonNumber.ToString(CultureInfo.InvariantCulture), episodeNumber, MovieDbProvider.ApiKey);
             if (!string.IsNullOrEmpty(language))
                 url += string.Format("&language={0}", MovieDbProvider.NormalizeLanguage(language, country));
@@ -124,11 +127,11 @@ namespace MovieDbWithProxy
             return rootObject;
         }
 
-        protected Task<HttpResponseInfo> GetResponse(string url, CancellationToken cancellationToken) => _httpClient.GetResponse(new HttpRequestOptions()
+        protected Task<HttpResponseInfo> GetResponse(string url, CancellationToken cancellationToken)
         {
-            CancellationToken = cancellationToken,
-            Url = url
-        });
+            EntryPoint.Current.LogCall();
+            return MovieDbProvider.Current.GetImageResponse(url, cancellationToken);            
+        }
 
         public class Images
         {

@@ -4,21 +4,18 @@ using MediaBrowser.Controller.Providers;
 using MediaBrowser.Model.Configuration;
 using MediaBrowser.Model.Dto;
 using MediaBrowser.Model.Entities;
-using MediaBrowser.Model.Logging;
 using MediaBrowser.Model.Providers;
 using MovieDbWithProxy.Models;
-using HttpRequestOptions = MediaBrowser.Common.Net.HttpRequestOptions;
 
 namespace MovieDbWithProxy
 {
-    internal class MovieDbBoxSetImageProvider :
+    internal class MovieDbBoxSetImageProvider : 
       IRemoteImageProviderWithOptions,
       IRemoteImageProvider,
       IImageProvider,
       IHasOrder
     {
         private readonly IHttpClient _httpClient;
-
         public MovieDbBoxSetImageProvider(IHttpClient httpClient) => _httpClient = httpClient;
 
         public string Name => Plugin.ProviderName;        
@@ -36,6 +33,7 @@ namespace MovieDbWithProxy
             RemoteImageFetchOptions options,
             CancellationToken cancellationToken)
         {
+            EntryPoint.Current.LogCall();
             string providerId = ProviderIdsExtensions.GetProviderId(options.Item, MetadataProviders.Tmdb);
             if (!string.IsNullOrEmpty(providerId))
             {
@@ -63,6 +61,7 @@ namespace MovieDbWithProxy
           TmdbSettingsResult tmdbSettings,
           string baseUrl)
         {
+            EntryPoint.Current.LogCall();
             List<RemoteImageInfo> images1 = new List<RemoteImageInfo>();
             MovieDbBoxSetProvider.Images images2 = obj.images ?? new MovieDbBoxSetProvider.Images();
             images1.AddRange(GetPosters(images2).Select(i => new RemoteImageInfo()
@@ -114,10 +113,10 @@ namespace MovieDbWithProxy
 
         public int Order => 0;
 
-        public Task<HttpResponseInfo> GetImageResponse(string url, CancellationToken cancellationToken) => _httpClient.GetResponse(new HttpRequestOptions()
+        public Task<HttpResponseInfo> GetImageResponse(string url, CancellationToken cancellationToken)
         {
-            CancellationToken = cancellationToken,
-            Url = url
-        });
+            EntryPoint.Current.LogCall();
+            return MovieDbProvider.Current.GetImageResponse(url, cancellationToken);
+        }
     }
 }

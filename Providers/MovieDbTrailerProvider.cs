@@ -3,7 +3,6 @@ using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Providers;
 using MediaBrowser.Model.Configuration;
 using MediaBrowser.Model.Providers;
-using HttpRequestOptions = MediaBrowser.Common.Net.HttpRequestOptions;
 
 namespace MovieDbWithProxy
 {
@@ -25,6 +24,7 @@ namespace MovieDbWithProxy
           TrailerInfo searchInfo,
           CancellationToken cancellationToken)
         {
+            EntryPoint.Current.LogCall();
             return MovieDbProvider.Current.GetMovieSearchResults(searchInfo, cancellationToken);
         }
 
@@ -32,6 +32,7 @@ namespace MovieDbWithProxy
           TrailerInfo info,
           CancellationToken cancellationToken)
         {
+            EntryPoint.Current.LogCall();
             return MovieDbProvider.Current.GetItemMetadata<Trailer>(info, cancellationToken);
         }
 
@@ -43,10 +44,10 @@ namespace MovieDbWithProxy
             MetadataFeatures.Collections
         };
 
-        public Task<HttpResponseInfo> GetImageResponse(string url, CancellationToken cancellationToken) => _httpClient.GetResponse(new HttpRequestOptions()
+        public Task<HttpResponseInfo> GetImageResponse(string url, CancellationToken cancellationToken)
         {
-            CancellationToken = cancellationToken,
-            Url = url
-        });
+            EntryPoint.Current.LogCall();
+            return MovieDbProvider.Current.GetImageResponse(url, cancellationToken);
+        }
     }
 }

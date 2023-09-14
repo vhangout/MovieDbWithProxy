@@ -50,6 +50,7 @@ namespace MovieDbWithProxy
           EpisodeInfo searchInfo,
           CancellationToken cancellationToken)
         {
+            EntryPoint.Current.LogCall();
             MovieDbEpisodeProvider dbEpisodeProvider1 = this;
             List<RemoteSearchResult> list = new List<RemoteSearchResult>();
             int? nullable = searchInfo.IndexNumber;
@@ -81,6 +82,7 @@ namespace MovieDbWithProxy
           RemoteMetadataFetchOptions<EpisodeInfo> options,
           CancellationToken cancellationToken)
         {
+            EntryPoint.Current.LogCall();
             MovieDbEpisodeProvider dbEpisodeProvider = this;
             EpisodeInfo info = options.SearchInfo;
             MetadataResult<Episode> result = new MetadataResult<Episode>();
@@ -124,7 +126,7 @@ namespace MovieDbWithProxy
                 episode.CommunityRating = new float?((float)rootObject.vote_average);
                 if (rootObject.videos != null && rootObject.videos.results != null)
                 {
-                    foreach (MovieDbProviderBase.Video result1 in rootObject.videos.results)
+                    foreach (Video result1 in rootObject.videos.results)
                     {
                         if (string.Equals(result1.type, "trailer", StringComparison.OrdinalIgnoreCase) && string.Equals(result1.site, "youtube", StringComparison.OrdinalIgnoreCase))
                         {
@@ -215,6 +217,10 @@ namespace MovieDbWithProxy
             throw new NotImplementedException();
         }
 
-        public Task<HttpResponseInfo> GetImageResponse(string url, CancellationToken cancellationToken) => GetResponse(url, cancellationToken);        
+        public Task<HttpResponseInfo> GetImageResponse(string url, CancellationToken cancellationToken)
+        {
+            EntryPoint.Current.LogCall();
+            return MovieDbProvider.Current.GetImageResponse(url, cancellationToken);
+        }
     }
 }

@@ -70,6 +70,7 @@ namespace MovieDbWithProxy
           SeriesInfo searchInfo,
           CancellationToken cancellationToken)
         {
+            EntryPoint.Current.LogCall();
             MovieDbSeriesProvider dbSeriesProvider1 = this;
             string providerId1 = ProviderIdsExtensions.GetProviderId(searchInfo, MetadataProviders.Tmdb);
             if (!string.IsNullOrEmpty(providerId1))
@@ -141,6 +142,7 @@ namespace MovieDbWithProxy
           bool foundByName,
           CancellationToken cancellationToken)
         {
+            EntryPoint.Current.LogCall();
             DateTimeOffset? episodeAirDate = searchInfo.EpisodeAirDate;
             if (episodeAirDate.HasValue & foundByName)
             {
@@ -162,6 +164,7 @@ namespace MovieDbWithProxy
           string country,
           CancellationToken cancellationToken)
         {
+            EntryPoint.Current.LogCall();
             EntryPoint.Current.Log(this, LogSeverity.Info, "Checking AiredWithin for {0}. episodeAirDate: {1}", new object[2] { remoteSearchResult.Name, episodeAirDate.UtcDateTime.ToShortDateString() });
 
             if (!remoteSearchResult.PremiereDate.HasValue || episodeAirDate.Year < remoteSearchResult.PremiereDate.GetValueOrDefault().Year)
@@ -212,6 +215,7 @@ namespace MovieDbWithProxy
           SeriesInfo info,
           CancellationToken cancellationToken)
         {
+            EntryPoint.Current.LogCall();
             MovieDbSeriesProvider dbSeriesProvider1 = this;
             MetadataResult<Series> result = new MetadataResult<Series>();
             result.QueriedById = true;
@@ -273,6 +277,7 @@ namespace MovieDbWithProxy
           string preferredCountryCode,
           CancellationToken cancellationToken)
         {
+            EntryPoint.Current.LogCall();
             MetadataResult<Series> result = new MetadataResult<Series>();
             RootObject seriesInfo = await EnsureSeriesInfo(tmdbId, language, preferredCountryCode, cancellationToken).ConfigureAwait(false);
             if (seriesInfo == null)
@@ -290,6 +295,7 @@ namespace MovieDbWithProxy
           string preferredCountryCode,
           TmdbSettingsResult settings)
         {
+            EntryPoint.Current.LogCall();
             Series series = seriesResult.Item;
             series.Name = seriesInfo.name;
             series.OriginalTitle = seriesInfo.GetOriginalTitle();
@@ -359,6 +365,7 @@ namespace MovieDbWithProxy
         private List<Video> GetTrailers(
           RootObject seriesInfo)
         {
+            EntryPoint.Current.LogCall();
             List<Video> trailers = new List<Video>();
             if (seriesInfo.videos != null && seriesInfo.videos.results != null)
             {
@@ -381,6 +388,7 @@ namespace MovieDbWithProxy
           string preferredMetadataCountry,
           CancellationToken cancellationToken)
         {
+            EntryPoint.Current.LogCall();
             RootObject rootObject = await FetchMainResult(id, preferredMetadataLanguage, preferredMetadataCountry, cancellationToken).ConfigureAwait(false);
             if (rootObject == null)
                 return null;
@@ -396,6 +404,7 @@ namespace MovieDbWithProxy
           string country,
           CancellationToken cancellationToken)
         {
+            EntryPoint.Current.LogCall();
             string url = string.Format("https://api.themoviedb.org/3/tv/{0}?api_key={1}&append_to_response=alternative_titles,reviews,credits,images,keywords,external_ids,videos,content_ratings", id, MovieDbProvider.ApiKey);
             if (!string.IsNullOrEmpty(language))
                 url += string.Format("&language={0}", MovieDbProvider.NormalizeLanguage(language, country));
@@ -483,6 +492,7 @@ namespace MovieDbWithProxy
           string country,
           CancellationToken cancellationToken)
         {
+            EntryPoint.Current.LogCall();
             string str = !string.IsNullOrEmpty(tmdbId) ? GetDataFilePath(tmdbId, language) : throw new ArgumentNullException(nameof(tmdbId));
             FileSystemMetadata fileSystemInfo = _fileSystem.GetFileSystemInfo(str);
             return fileSystemInfo.Exists && DateTimeOffset.UtcNow - _fileSystem.GetLastWriteTimeUtc(fileSystemInfo) <= MovieDbProviderBase.CacheTime ? _jsonSerializer.DeserializeFromFileAsync<RootObject>(str) : DownloadSeriesInfo(tmdbId, language, country, cancellationToken);
@@ -503,6 +513,7 @@ namespace MovieDbWithProxy
           string providerIdKey,
           CancellationToken cancellationToken)
         {
+            EntryPoint.Current.LogCall();
             string str = string.Format("https://api.themoviedb.org/3/find/{0}?api_key={1}&external_source={2}", id, MovieDbProvider.ApiKey, externalSource);
             MovieDbProvider current = MovieDbProvider.Current;
             using (HttpResponseInfo response = await current.GetMovieDbResponse(new HttpRequestOptions()
@@ -540,11 +551,11 @@ namespace MovieDbWithProxy
 
         public int Order => 1;
 
-        public Task<HttpResponseInfo> GetImageResponse(string url, CancellationToken cancellationToken) => _httpClient.GetResponse(new HttpRequestOptions()
+        public Task<HttpResponseInfo> GetImageResponse(string url, CancellationToken cancellationToken)
         {
-            CancellationToken = cancellationToken,
-            Url = url
-        });
+            EntryPoint.Current.LogCall();
+            return MovieDbProvider.Current.GetImageResponse(url, cancellationToken);
+        }
 
         public class CreatedBy
         {

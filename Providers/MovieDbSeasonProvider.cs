@@ -53,6 +53,7 @@ namespace MovieDbWithProxy
           RemoteMetadataFetchOptions<SeasonInfo> options,
           CancellationToken cancellationToken)
         {
+            EntryPoint.Current.LogCall();
             SeasonInfo info = options.SearchInfo;
             MetadataResult<Season> result = new MetadataResult<Season>();
             string tmdbId;
@@ -122,6 +123,7 @@ namespace MovieDbWithProxy
           IDirectoryService directoryService,
           CancellationToken cancellationToken)
         {
+            EntryPoint.Current.LogCall();
             if (string.IsNullOrEmpty(tmdbId))
                 throw new ArgumentNullException(nameof(tmdbId));
             string path = GetDataFilePath(tmdbId, seasonNumber, language);
@@ -154,6 +156,7 @@ namespace MovieDbWithProxy
           string preferredMetadataCountry,
           CancellationToken cancellationToken)
         {
+            EntryPoint.Current.LogCall();
             string url = string.Format("https://api.themoviedb.org/3/tv/{0}/season/{1}?api_key={2}&append_to_response=images,keywords,external_ids,credits,videos", id, seasonNumber.ToString(CultureInfo.InvariantCulture), MovieDbProvider.ApiKey);
             if (!string.IsNullOrEmpty(language))
                 url += string.Format("&language={0}", MovieDbProvider.NormalizeLanguage(language, preferredMetadataCountry));

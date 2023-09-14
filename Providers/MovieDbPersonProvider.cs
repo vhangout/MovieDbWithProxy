@@ -53,6 +53,7 @@ namespace MovieDbWithProxy
           PersonLookupInfo searchInfo,
           CancellationToken cancellationToken)
         {
+            EntryPoint.Current.LogCall();
             string tmdbId = ProviderIdsExtensions.GetProviderId(searchInfo, MetadataProviders.Tmdb);
             string tmdbImageUrl = (await MovieDbProvider.Current.GetTmdbSettings(cancellationToken).ConfigureAwait(false)).images.GetImageUrl("original");
             string metadataLanguage = searchInfo.MetadataLanguage;
@@ -136,6 +137,7 @@ namespace MovieDbWithProxy
           PersonSearchResult i,
           string baseImageUrl)
         {
+            EntryPoint.Current.LogCall();
             RemoteSearchResult searchResult = new RemoteSearchResult();
             searchResult.SearchProviderName = Name;
             searchResult.Name = i.Name;
@@ -148,6 +150,7 @@ namespace MovieDbWithProxy
           RemoteMetadataFetchOptions<PersonLookupInfo> options,
           CancellationToken cancellationToken)
         {
+            EntryPoint.Current.LogCall();
             PersonLookupInfo id = options.SearchInfo;
             IDirectoryService directoryService = options.DirectoryService;
             string id1 = ProviderIdsExtensions.GetProviderId(id, MetadataProviders.Tmdb);
@@ -206,6 +209,7 @@ namespace MovieDbWithProxy
           IDirectoryService directoryService,
           CancellationToken cancellationToken)
         {
+            EntryPoint.Current.LogCall();
             string cacheKey = "tmdb_person_" + id + "_" + language;
             PersonResult personResult;
             if (!directoryService.TryGetFromCache(cacheKey, out personResult))
@@ -233,6 +237,7 @@ namespace MovieDbWithProxy
           string language,
           CancellationToken cancellationToken)
         {
+            EntryPoint.Current.LogCall();
             string personMetadataUrl = GetPersonMetadataUrl(id);
             if (!string.IsNullOrEmpty(language))
                 personMetadataUrl += string.Format("&language={0}", language);
@@ -313,11 +318,11 @@ namespace MovieDbWithProxy
 
         private static string GetPersonsDataPath(IApplicationPaths appPaths) => Path.Combine(appPaths.CachePath, "tmdb-people");
 
-        public Task<HttpResponseInfo> GetImageResponse(string url, CancellationToken cancellationToken) => _httpClient.GetResponse(new HttpRequestOptions()
+        public Task<HttpResponseInfo> GetImageResponse(string url, CancellationToken cancellationToken)
         {
-            CancellationToken = cancellationToken,
-            Url = url
-        });
+            EntryPoint.Current.LogCall();
+            return MovieDbProvider.Current.GetImageResponse(url, cancellationToken);
+        }
 
         public class PersonSearchResult
         {

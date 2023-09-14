@@ -13,6 +13,8 @@ namespace MovieDbWithProxy
             _logger = logger;
         }
 
+
+
         public IEnumerable<ConfigurationStore> GetConfigurations() => new ConfigurationStore[1]
         {
             new MovieDBWithProxyConfigurationStore(_logger)            
