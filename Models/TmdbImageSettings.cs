@@ -1,6 +1,6 @@
 ﻿namespace MovieDbWithProxy.Models
 {
-  public class TmdbImageSettings
+  internal class TmdbImageSettings
   {
     public List<string> backdrop_sizes { get; set; }
 

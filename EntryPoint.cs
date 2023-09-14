@@ -1,20 +1,15 @@
-﻿using MediaBrowser.Common.Configuration;
+﻿using System.Diagnostics;
+using System.Runtime.CompilerServices;
+
+using MediaBrowser.Common.Configuration;
 using MediaBrowser.Common.Net;
-using MediaBrowser.Controller.Collections;
 using MediaBrowser.Controller.Configuration;
-using MediaBrowser.Controller.Library;
 using MediaBrowser.Controller.Plugins;
-using MediaBrowser.Controller.Providers;
 using MediaBrowser.Controller.Security;
-using MediaBrowser.Model.Configuration;
 using MediaBrowser.Model.Logging;
-using MovieDbWithProxy.Commons;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using HttpRequestOptions = MediaBrowser.Common.Net.HttpRequestOptions;
+using Emby.Server.Implementations.HttpClientManager;
+using System.Net;
 
 namespace MovieDbWithProxy
 {
@@ -24,14 +19,17 @@ namespace MovieDbWithProxy
 
         private readonly ILogger _logger;
         private readonly IConfigurationManager _config;
-        private MovieDbWithProxyConfiguration options;
+        private MovieDbWithProxyConfiguration _options;
         public readonly IServerConfigurationManager ServerConfiguration;
         public readonly IAuthenticationRepository AuthRepo;
 
-        public IHttpClient HttpClient { get; private set;}
+        private readonly IHttpClient _httpClient;
+        private readonly HttpClientInfo[] _clientInfo;
+
 
         public EntryPoint(
             ILogger logger,
+            IHttpClient httpClient,
             IConfigurationManager config,
             IServerConfigurationManager serverConfiguration,
             IAuthenticationRepository authRepo)
@@ -40,40 +38,100 @@ namespace MovieDbWithProxy
             _config = config;
             ServerConfiguration = serverConfiguration;
             AuthRepo = authRepo;
+            _httpClient = httpClient;
+            _clientInfo = new HttpClientInfo[]
+            {
+                (HttpClientInfo)_httpClient.GetConnectionContext(new HttpRequestOptions { Url = "https://image.tmdb.org" }),
+                (HttpClientInfo)_httpClient.GetConnectionContext(new HttpRequestOptions { Url = "https://api.themoviedb.org" }),
+            };
+
+            _options = (MovieDbWithProxyConfiguration)_config.GetConfiguration(MovieDbWithProxyConfigurationFactory.Key);
+
             _config.NamedConfigurationUpdated += new EventHandler<ConfigurationUpdateEventArgs>(ConfigWasUpdated);
-            Current = this;            
-        }        
+            Current = this;
+        }
 
         private void ConfigWasUpdated(object sender, ConfigurationUpdateEventArgs e)
         {
             if (!string.Equals(e.Key, MovieDbWithProxyConfigurationFactory.Key, StringComparison.OrdinalIgnoreCase))
                 return;
-            options = (MovieDbWithProxyConfiguration)_config.GetConfiguration(MovieDbWithProxyConfigurationFactory.Key);
-            HttpClient = new HttpClientWithProxy(options);
-        }        
+            LogCall();
+            updateClients();
+        }
 
         public void Run()
         {
-            options = (MovieDbWithProxyConfiguration)_config.GetConfiguration(MovieDbWithProxyConfigurationFactory.Key);            
-            HttpClient = new HttpClientWithProxy(options);
+            LogCall();            
+            updateClients();
+        }
+
+        private void updateClients()
+        {
+            _options = (MovieDbWithProxyConfiguration)_config.GetConfiguration(MovieDbWithProxyConfigurationFactory.Key);
+            foreach (HttpClientInfo context in _clientInfo)
+            {
+                context.HttpClient = null;
+                var handler = new HttpClientHandler();
+
+                if (_options.Enable.GetValueOrDefault(false))
+                {
+                    //var credentials = _options.EnableCredentials.GetValueOrDefault(false) ? new NetworkCredential(_options.Login, _options.Password) : null;
+
+                    handler.Proxy = new WebProxy
+                    {
+                        Address = new Uri($"{_options.ProxyType.ToLower()}://{_options.ProxyUrl}:{_options.ProxyPort}"),
+                        BypassProxyOnLocal = false,
+                        UseDefaultCredentials = false
+                        //Credentials = credentials,                        
+                    };                    
+                }
+
+                context.HttpClient = new HttpClient(handler);
+            }
         }
 
         public void Dispose()
         {
-            HttpClient = null;
             Current = null;
         }
 
         public void Log(object sender, LogSeverity severity, string message, params object[] paramList)
         {
-            if (_logger != null && options.EnableDebugLog != null && options.EnableDebugLog.Value)
+            if (_options.EnableDebugLog.GetValueOrDefault(false))
                 _logger.Log(severity, $"{sender.GetType().Name}: {message}", paramList);
+        }
+
+        public void Log(string message)
+        {
+            if (_options.EnableDebugLog.GetValueOrDefault(false))
+                _logger.Log(LogSeverity.Info, message);
         }
 
         public void LogStack()
         {
-            if (_logger != null && options.EnableDebugLog != null && options.EnableDebugLog.Value)
-                _logger.Log(LogSeverity.Info, new System.Diagnostics.StackTrace(true).ToString());
+            if (_options.EnableDebugLog.GetValueOrDefault(false))
+                _logger.Log(LogSeverity.Info, new StackTrace(true).ToString());
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        public void LogCall()
+        {
+            if (_options.EnableDebugLog.GetValueOrDefault(false))
+            {
+                var st = new StackTrace(true);
+                var sf = st.GetFrame(1);
+                _logger.Log(LogSeverity.Info, $"*** {sf.GetMethod().ReflectedType.Name}:{sf.GetMethod().Name} ***");
+            }
+
+        }
+
+        public void LogDump(object obj)
+        {
+            if (_options.EnableDebugLog.GetValueOrDefault())
+            {
+                _logger.Log(LogSeverity.Info, $"{ObjectDumper.Dump(obj, DumpStyle.CSharp)}");
+            }
+
         }
     }
 }

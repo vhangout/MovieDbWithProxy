@@ -13,7 +13,6 @@ using MediaBrowser.Model.Logging;
 using MediaBrowser.Model.Net;
 using MediaBrowser.Model.Providers;
 using MediaBrowser.Model.Serialization;
-using MovieDbWithProxy.Commons;
 using MovieDbWithProxy.Models;
 using System.Globalization;
 using System.Net;
@@ -40,6 +39,7 @@ namespace MovieDbWithProxy
         private readonly IFileSystem _fileSystem;
         private readonly IServerConfigurationManager _configurationManager;
         private readonly ILocalizationManager _localization;
+        private readonly IHttpClient _httpClient;
         private readonly ILibraryManager _libraryManager;
 
         internal static MovieDbSeriesProvider Current { get; private set; }
@@ -49,12 +49,14 @@ namespace MovieDbWithProxy
           IFileSystem fileSystem,
           IServerConfigurationManager configurationManager,
           ILocalizationManager localization,
+          IHttpClient httpClient,
           ILibraryManager libraryManager)
         {
             _jsonSerializer = jsonSerializer;
             _fileSystem = fileSystem;
             _configurationManager = configurationManager;
             _localization = localization;
+            _httpClient = httpClient;
             _libraryManager = libraryManager;
             Current = this;
         }
@@ -538,7 +540,7 @@ namespace MovieDbWithProxy
 
         public int Order => 1;
 
-        public Task<HttpResponseInfo> GetImageResponse(string url, CancellationToken cancellationToken) => EntryPoint.Current.HttpClient.GetResponse(new HttpRequestOptions()
+        public Task<HttpResponseInfo> GetImageResponse(string url, CancellationToken cancellationToken) => _httpClient.GetResponse(new HttpRequestOptions()
         {
             CancellationToken = cancellationToken,
             Url = url

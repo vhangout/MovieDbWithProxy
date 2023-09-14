@@ -9,8 +9,7 @@ using MediaBrowser.Model.IO;
 using MediaBrowser.Model.Logging;
 using MediaBrowser.Model.Providers;
 using MediaBrowser.Model.Serialization;
-using MovieDbWithProxy.Commons;
-using MovieDbWithProxy.Models;
+using static MovieDbWithProxy.MovieDbProvider;
 using HttpRequestOptions = MediaBrowser.Common.Net.HttpRequestOptions;
 
 namespace MovieDbWithProxy
@@ -22,13 +21,16 @@ namespace MovieDbWithProxy
       IHasOrder
     {
         private readonly IJsonSerializer _jsonSerializer;
+        private readonly IHttpClient _httpClient;
         private readonly IFileSystem _fileSystem;
 
         public MovieDbImageProvider(
           IJsonSerializer jsonSerializer,
+          IHttpClient httpClient,
           IFileSystem fileSystem)
         {
             _jsonSerializer = jsonSerializer;
+            _httpClient = httpClient;
             _fileSystem = fileSystem;
         }
 
@@ -60,9 +62,9 @@ namespace MovieDbWithProxy
             EntryPoint.Current.Log(this, LogSeverity.Info, "{0}", options.Item);
             BaseItem item = options.Item;
             List<RemoteImageInfo> list = new List<RemoteImageInfo>();
-            CompleteMovieData movieInfo = await GetMovieInfo(item, null, null, _jsonSerializer, cancellationToken).ConfigureAwait(false);
-            Images results = movieInfo?.images;
-            TmdbSettingsResult tmdbSettings = await MovieDbProvider.Current.GetTmdbSettings(cancellationToken).ConfigureAwait(false);
+            MovieDbProvider.CompleteMovieData movieInfo = await GetMovieInfo(item, null, null, _jsonSerializer, cancellationToken).ConfigureAwait(false);
+            Images results = movieInfo.images;
+            var tmdbSettings = await MovieDbProvider.Current.GetTmdbSettings(cancellationToken).ConfigureAwait(false);
             string tmdbImageUrl = tmdbSettings.images.GetImageUrl("original");
             List<ImageType> list1 = GetSupportedImages(item).ToList();
             if (results != null)
@@ -133,13 +135,13 @@ namespace MovieDbWithProxy
 
         public static string NormalizeImageLanguage(string lang) => string.Equals(lang, "xx", StringComparison.OrdinalIgnoreCase) ? (string)null : lang;
 
-        private IEnumerable<TmdbImage> GetLogos(Images images) => (IEnumerable<TmdbImage>)images.logos ?? new List<TmdbImage>();
+        private IEnumerable<Models.TmdbImage> GetLogos(Images images) => (IEnumerable<Models.TmdbImage>)images.logos ?? new List<Models.TmdbImage>();
 
-        private IEnumerable<TmdbImage> GetPosters(Images images) => (IEnumerable<TmdbImage>)images.posters ?? new List<TmdbImage>();
+        private IEnumerable<Models.TmdbImage> GetPosters(Images images) => (IEnumerable<Models.TmdbImage>)images.posters ?? new List<Models.TmdbImage>();
 
-        private IEnumerable<TmdbImage> GetBackdrops(Images images) => (images.backdrops == null ? new List<TmdbImage>() : (IEnumerable<TmdbImage>)images.backdrops).OrderByDescending(i => i.vote_average).ThenByDescending(i => i.vote_count);
+        private IEnumerable<Models.TmdbImage> GetBackdrops(Images images) => (images.backdrops == null ? new List<Models.TmdbImage>() : (IEnumerable<Models.TmdbImage>)images.backdrops).OrderByDescending(i => i.vote_average).ThenByDescending(i => i.vote_count);
 
-        private async Task<CompleteMovieData> GetMovieInfo(
+        private async Task<MovieDbProvider.CompleteMovieData> GetMovieInfo(
           BaseItem item,
           string language,
           string preferredMetadataCountry,
@@ -152,19 +154,19 @@ namespace MovieDbWithProxy
                 string providerId2 = ProviderIdsExtensions.GetProviderId(item, MetadataProviders.Imdb);
                 if (!string.IsNullOrWhiteSpace(providerId2))
                 {
-                    CompleteMovieData movieInfo = await MovieDbProvider.Current.FetchMainResult(providerId2, false, language, preferredMetadataCountry, cancellationToken).ConfigureAwait(false);
+                    MovieDbProvider.CompleteMovieData movieInfo = await MovieDbProvider.Current.FetchMainResult(providerId2, false, language, preferredMetadataCountry, cancellationToken).ConfigureAwait(false);
                     if (movieInfo != null)
                         return movieInfo;
                 }
                 return null;
             }
-            CompleteMovieData completeMovieData = await MovieDbProvider.Current.EnsureMovieInfo(providerId1, language, preferredMetadataCountry, cancellationToken).ConfigureAwait(false);
+            MovieDbProvider.CompleteMovieData completeMovieData = await MovieDbProvider.Current.EnsureMovieInfo(providerId1, language, preferredMetadataCountry, cancellationToken).ConfigureAwait(false);
             return completeMovieData == null ? null : completeMovieData;
         }
 
         public int Order => 0;
 
-        public Task<HttpResponseInfo> GetImageResponse(string url, CancellationToken cancellationToken) => EntryPoint.Current.HttpClient.GetResponse(new HttpRequestOptions()
+        public Task<HttpResponseInfo> GetImageResponse(string url, CancellationToken cancellationToken) => _httpClient.GetResponse(new HttpRequestOptions()
         {
             CancellationToken = cancellationToken,
             Url = url

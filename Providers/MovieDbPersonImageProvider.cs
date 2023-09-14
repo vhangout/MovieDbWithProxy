@@ -8,7 +8,6 @@ using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.Logging;
 using MediaBrowser.Model.Providers;
 using MediaBrowser.Model.Serialization;
-using MovieDbWithProxy.Commons;
 using MovieDbWithProxy.Models;
 using HttpRequestOptions = MediaBrowser.Common.Net.HttpRequestOptions;
 
@@ -24,13 +23,16 @@ namespace MovieDbWithProxy
 
         private readonly IServerConfigurationManager _config;
         private readonly IJsonSerializer _jsonSerializer;
+        private readonly IHttpClient _httpClient;
 
         public MovieDbPersonImageProvider(
           IServerConfigurationManager config,
-          IJsonSerializer jsonSerializer)
+          IJsonSerializer jsonSerializer,
+          IHttpClient httpClient)
         {
             _config = config;
             _jsonSerializer = jsonSerializer;
+            _httpClient = httpClient;
         }
 
         public bool Supports(BaseItem item) => item is Person;
@@ -90,7 +92,7 @@ namespace MovieDbWithProxy
 
         public int Order => 0;
 
-        public Task<HttpResponseInfo> GetImageResponse(string url, CancellationToken cancellationToken) => EntryPoint.Current.HttpClient.GetResponse(new HttpRequestOptions()
+        public Task<HttpResponseInfo> GetImageResponse(string url, CancellationToken cancellationToken) => _httpClient.GetResponse(new HttpRequestOptions()
         {
             CancellationToken = cancellationToken,
             Url = url

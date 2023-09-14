@@ -1,12 +1,9 @@
-﻿using MediaBrowser.Common.Configuration;
-using MediaBrowser.Common.Net;
+﻿using MediaBrowser.Common.Net;
 using MediaBrowser.Controller.Configuration;
 using MediaBrowser.Controller.Providers;
 using MediaBrowser.Model.Globalization;
 using MediaBrowser.Model.IO;
-using MediaBrowser.Model.Logging;
 using MediaBrowser.Model.Serialization;
-using MovieDbWithProxy.Commons;
 using MovieDbWithProxy.Models;
 using System.Globalization;
 using HttpRequestOptions = MediaBrowser.Common.Net.HttpRequestOptions;
@@ -16,6 +13,7 @@ namespace MovieDbWithProxy
     public abstract class MovieDbProviderBase
     {
         private const string EpisodeUrlPattern = "https://api.themoviedb.org/3/tv/{0}/season/{1}/episode/{2}?api_key={3}&append_to_response=images,external_ids,credits,videos";
+        private readonly IHttpClient _httpClient;
         private readonly IServerConfigurationManager _configurationManager;
         private readonly IJsonSerializer _jsonSerializer;
         protected readonly IFileSystem FileSystem;
@@ -23,11 +21,13 @@ namespace MovieDbWithProxy
         public static TimeSpan CacheTime = TimeSpan.FromHours(6.0);
 
         public MovieDbProviderBase(
+          IHttpClient httpClient,
           IServerConfigurationManager configurationManager,
           IJsonSerializer jsonSerializer,
           IFileSystem fileSystem,
           ILocalizationManager localization)
         {
+            _httpClient = httpClient;
             _configurationManager = configurationManager;
             _jsonSerializer = jsonSerializer;
             FileSystem = fileSystem;
@@ -124,7 +124,7 @@ namespace MovieDbWithProxy
             return rootObject;
         }
 
-        protected Task<HttpResponseInfo> GetResponse(string url, CancellationToken cancellationToken) => EntryPoint.Current.HttpClient.GetResponse(new HttpRequestOptions()
+        protected Task<HttpResponseInfo> GetResponse(string url, CancellationToken cancellationToken) => _httpClient.GetResponse(new HttpRequestOptions()
         {
             CancellationToken = cancellationToken,
             Url = url

@@ -9,8 +9,8 @@ using MediaBrowser.Model.IO;
 using MediaBrowser.Model.Logging;
 using MediaBrowser.Model.Providers;
 using MediaBrowser.Model.Serialization;
-using MovieDbWithProxy.Commons;
 using MovieDbWithProxy.Models;
+using System.Net.Http;
 using HttpRequestOptions = MediaBrowser.Common.Net.HttpRequestOptions;
 
 namespace MovieDbWithProxy
@@ -24,13 +24,16 @@ namespace MovieDbWithProxy
         public string Name => Plugin.ProviderName;
 
         private readonly IJsonSerializer _jsonSerializer;
+        private readonly IHttpClient _httpClient;
         private readonly IFileSystem _fileSystem;
 
         public MovieDbSeriesImageProvider(
           IJsonSerializer jsonSerializer,
+          IHttpClient httpClient,
           IFileSystem fileSystem)
         {
             _jsonSerializer = jsonSerializer;
+            _httpClient = httpClient;
             _fileSystem = fileSystem;
         }
 
@@ -122,7 +125,7 @@ namespace MovieDbWithProxy
 
         public int Order => 2;
 
-        public Task<HttpResponseInfo> GetImageResponse(string url, CancellationToken cancellationToken) => EntryPoint.Current.HttpClient.GetResponse(new HttpRequestOptions()
+        public Task<HttpResponseInfo> GetImageResponse(string url, CancellationToken cancellationToken) => _httpClient.GetResponse(new HttpRequestOptions()
         {
             CancellationToken = cancellationToken,
             Url = url

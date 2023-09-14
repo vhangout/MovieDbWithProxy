@@ -3,7 +3,6 @@ using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Providers;
 using MediaBrowser.Model.Configuration;
 using MediaBrowser.Model.Providers;
-using MovieDbWithProxy.Commons;
 using HttpRequestOptions = MediaBrowser.Common.Net.HttpRequestOptions;
 
 namespace MovieDbWithProxy
@@ -18,6 +17,8 @@ namespace MovieDbWithProxy
       IRemoteSearchProvider,
       IHasMetadataFeatures
     {
+        private readonly IHttpClient _httpClient;
+        public MovieDbTrailerProvider(IHttpClient httpClient) => this._httpClient = httpClient;
         public string Name => Plugin.ProviderName;
 
         public Task<IEnumerable<RemoteSearchResult>> GetSearchResults(
@@ -42,7 +43,7 @@ namespace MovieDbWithProxy
             MetadataFeatures.Collections
         };
 
-        public Task<HttpResponseInfo> GetImageResponse(string url, CancellationToken cancellationToken) => EntryPoint.Current.HttpClient.GetResponse(new HttpRequestOptions()
+        public Task<HttpResponseInfo> GetImageResponse(string url, CancellationToken cancellationToken) => _httpClient.GetResponse(new HttpRequestOptions()
         {
             CancellationToken = cancellationToken,
             Url = url

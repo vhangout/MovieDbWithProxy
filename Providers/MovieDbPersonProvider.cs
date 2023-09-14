@@ -10,7 +10,6 @@ using MediaBrowser.Model.Logging;
 using MediaBrowser.Model.Net;
 using MediaBrowser.Model.Providers;
 using MediaBrowser.Model.Serialization;
-using MovieDbWithProxy.Commons;
 using MovieDbWithProxy.Models;
 using System.Globalization;
 using System.Net;
@@ -32,6 +31,7 @@ namespace MovieDbWithProxy
         private readonly IJsonSerializer _jsonSerializer;
         private readonly IFileSystem _fileSystem;
         private readonly IServerConfigurationManager _configurationManager;
+        private readonly IHttpClient _httpClient;
         private readonly CultureInfo _usCulture = new CultureInfo("en-US");
 
         internal static MovieDbPersonProvider Current { get; private set; }
@@ -39,12 +39,14 @@ namespace MovieDbWithProxy
         public MovieDbPersonProvider(
           IFileSystem fileSystem,
           IServerConfigurationManager configurationManager,
-          IJsonSerializer jsonSerializer)
+          IJsonSerializer jsonSerializer,
+          IHttpClient httpClient)
         {
             _fileSystem = fileSystem;
             _configurationManager = configurationManager;
             _jsonSerializer = jsonSerializer;
-            Current = this;
+            _httpClient = httpClient;
+            Current = this;            
         }
 
         public async Task<IEnumerable<RemoteSearchResult>> GetSearchResults(
@@ -311,7 +313,7 @@ namespace MovieDbWithProxy
 
         private static string GetPersonsDataPath(IApplicationPaths appPaths) => Path.Combine(appPaths.CachePath, "tmdb-people");
 
-        public Task<HttpResponseInfo> GetImageResponse(string url, CancellationToken cancellationToken) => EntryPoint.Current.HttpClient.GetResponse(new HttpRequestOptions()
+        public Task<HttpResponseInfo> GetImageResponse(string url, CancellationToken cancellationToken) => _httpClient.GetResponse(new HttpRequestOptions()
         {
             CancellationToken = cancellationToken,
             Url = url

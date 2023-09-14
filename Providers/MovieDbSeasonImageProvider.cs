@@ -12,7 +12,6 @@ using MediaBrowser.Model.Logging;
 using MediaBrowser.Model.Net;
 using MediaBrowser.Model.Providers;
 using MediaBrowser.Model.Serialization;
-using MovieDbWithProxy.Commons;
 using MovieDbWithProxy.Models;
 using HttpRequestOptions = MediaBrowser.Common.Net.HttpRequestOptions;
 
@@ -25,16 +24,19 @@ namespace MovieDbWithProxy
       IHasOrder
     {
         public string Name => Plugin.ProviderName;
-
+        
+        private readonly IHttpClient _httpClient;
         private readonly MovieDbSeasonProvider _seasonProvider;
 
         public MovieDbSeasonImageProvider(
           IJsonSerializer jsonSerializer,
           IServerConfigurationManager configurationManager,
+          IHttpClient httpClient,
           IFileSystem fileSystem,
           ILocalizationManager localization)
         {
-            _seasonProvider = new MovieDbSeasonProvider(configurationManager, fileSystem, localization, jsonSerializer);
+            _httpClient = httpClient;
+            _seasonProvider = new MovieDbSeasonProvider(httpClient, configurationManager, fileSystem, localization, jsonSerializer);
         }
 
         public bool Supports(BaseItem item) => item is Season;
@@ -96,7 +98,7 @@ namespace MovieDbWithProxy
 
         public int Order => 2;
 
-        public Task<HttpResponseInfo> GetImageResponse(string url, CancellationToken cancellationToken) => EntryPoint.Current.HttpClient.GetResponse(new HttpRequestOptions()
+        public Task<HttpResponseInfo> GetImageResponse(string url, CancellationToken cancellationToken) => _httpClient.GetResponse(new HttpRequestOptions()
         {
             CancellationToken = cancellationToken,
             Url = url

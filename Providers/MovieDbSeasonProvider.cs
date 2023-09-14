@@ -1,18 +1,14 @@
-﻿using MediaBrowser.Common.Configuration;
-using MediaBrowser.Common.Net;
+﻿using MediaBrowser.Common.Net;
 using MediaBrowser.Controller.Configuration;
-using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.TV;
 using MediaBrowser.Controller.Providers;
 using MediaBrowser.Model.Configuration;
 using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.Globalization;
 using MediaBrowser.Model.IO;
-using MediaBrowser.Model.Logging;
 using MediaBrowser.Model.Net;
 using MediaBrowser.Model.Providers;
 using MediaBrowser.Model.Serialization;
-using MovieDbWithProxy.Commons;
 using MovieDbWithProxy.Models;
 using System.Globalization;
 using System.Net;
@@ -33,17 +29,20 @@ namespace MovieDbWithProxy
         public string Name => Plugin.ProviderName;
 
         private const string GetTvInfo3 = "https://api.themoviedb.org/3/tv/{0}/season/{1}?api_key={2}&append_to_response=images,keywords,external_ids,credits,videos";
+        private readonly IHttpClient _httpClient;
         private readonly IServerConfigurationManager _configurationManager;
         private readonly IJsonSerializer _jsonSerializer;
         private readonly IFileSystem _fileSystem;
-        private readonly ILocalizationManager _localization;    
+        private readonly ILocalizationManager _localization;
 
         public MovieDbSeasonProvider(
+            IHttpClient httpClient,
       IServerConfigurationManager configurationManager,
       IFileSystem fileSystem,
       ILocalizationManager localization,
       IJsonSerializer jsonSerializer)
         {
+            _httpClient = httpClient;
             _configurationManager = configurationManager;
             _fileSystem = fileSystem;
             _localization = localization;
@@ -109,7 +108,7 @@ namespace MovieDbWithProxy
             return Task.FromResult((IEnumerable<RemoteSearchResult>)new List<RemoteSearchResult>());
         }
 
-        public Task<HttpResponseInfo> GetImageResponse(string url, CancellationToken cancellationToken) => EntryPoint.Current.HttpClient.GetResponse(new HttpRequestOptions()
+        public Task<HttpResponseInfo> GetImageResponse(string url, CancellationToken cancellationToken) => _httpClient.GetResponse(new HttpRequestOptions()
         {
             CancellationToken = cancellationToken,
             Url = url
@@ -135,7 +134,7 @@ namespace MovieDbWithProxy
                 rootObject = await FetchMainResult(tmdbId, seasonNumber, language, preferredMetadataCountry, cancellationToken).ConfigureAwait(false);
                 _fileSystem.CreateDirectory(_fileSystem.GetDirectoryName(path));
                 _jsonSerializer.SerializeToFile(rootObject, path);
-            }            
+            }
             return rootObject;
         }
 

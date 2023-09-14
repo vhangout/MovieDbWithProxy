@@ -7,7 +7,6 @@ using MediaBrowser.Model.Configuration;
 using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.Globalization;
 using MediaBrowser.Model.IO;
-using MediaBrowser.Model.Logging;
 using MediaBrowser.Model.Net;
 using MediaBrowser.Model.Providers;
 using MediaBrowser.Model.Serialization;
@@ -33,11 +32,12 @@ namespace MovieDbWithProxy
         public string Name => Plugin.ProviderName;
 
         public MovieDbEpisodeProvider(
+          IHttpClient httpClient,
           IServerConfigurationManager configurationManager,
           IJsonSerializer jsonSerializer,
           IFileSystem fileSystem,
           ILocalizationManager localization)
-          : base(configurationManager, jsonSerializer, fileSystem, localization)
+          : base(httpClient, configurationManager, jsonSerializer, fileSystem, localization)
         {
         }
 

@@ -10,10 +10,10 @@ using MediaBrowser.Model.IO;
 using MediaBrowser.Model.Logging;
 using MediaBrowser.Model.Providers;
 using MediaBrowser.Model.Serialization;
-using MovieDbWithProxy.Commons;
 using MovieDbWithProxy.Models;
 using System.Globalization;
 using System.Text.RegularExpressions;
+using System.Threading;
 using HttpRequestOptions = MediaBrowser.Common.Net.HttpRequestOptions;
 
 namespace MovieDbWithProxy
@@ -34,8 +34,11 @@ namespace MovieDbWithProxy
         private readonly IServerConfigurationManager _config;
         private readonly IFileSystem _fileSystem;
         private readonly ILocalizationManager _localization;
+        private readonly IHttpClient _httpClient;
         private readonly ILibraryManager _libraryManager;
         private readonly CultureInfo _usCulture = new CultureInfo("en-US");
+        private readonly Regex _rgx;
+        private readonly string _baseUrl;
 
         public MovieDbBoxSetProvider(
           IJsonSerializer json,
@@ -50,6 +53,12 @@ namespace MovieDbWithProxy
             _fileSystem = fileSystem;
             _localization = localization;
             _libraryManager = libraryManager;
+            _rgx = new Regex(@"[\?&](([^&=]+)=([^&=#]*))");
+
+            var task = Task.Run(async () => await MovieDbProvider.Current.GetTmdbSettings(CancellationToken.None).ConfigureAwait(false));
+            TmdbSettingsResult settings = task.Result;
+            _baseUrl = settings.images.GetImageUrl("original");
+
             Current = this;
         }
 
@@ -235,16 +244,18 @@ namespace MovieDbWithProxy
 
         public Task<HttpResponseInfo> GetImageResponse(string url, CancellationToken cancellationToken)
         {
-            EntryPoint.Current.Log(this, LogSeverity.Info, "*** GetImageResponse ***");
-            EntryPoint.Current.Log(this, LogSeverity.Info, url);
-            if (url.StartsWith("/"))
+            EntryPoint.Current.LogCall();
+            EntryPoint.Current.Log(url);            
+            EntryPoint.Current.Log(_baseUrl);
+            if (url.StartsWith("/emby"))
+            {                
+                url = _baseUrl + _rgx.Match(url).Groups[3].Value;
+            } else if (url.StartsWith("/"))
             {
-                var pattern = @"(?:\?|\&)(?<key>[\w]+)(?:\=|\&?)(?<value>[\w+,.-]*)";
-                var settings = MovieDbProvider.Current.GetTmdbSettings(cancellationToken).ConfigureAwait(false);
-                url = settings.images.GetImageUrl("original") +
-                    Regex.Match(url, pattern).Groups["imageUrl"].Value;
+                url = _baseUrl + url;
             }
-            return EntryPoint.Current.HttpClient.GetResponse(new HttpRequestOptions()
+            EntryPoint.Current.Log(url);
+            return _httpClient.GetResponse(new HttpRequestOptions()
             {
                 CancellationToken = cancellationToken,
                 Url = url

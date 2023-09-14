@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
 		<TargetFramework>net6.0</TargetFramework>
@@ -19,9 +19,15 @@
 		<PackageReference Include="MediaBrowser.Server.Core" Version="4.7.9" />
 		<PackageReference Include="System.Memory" Version="4.5.5" />
 	</ItemGroup>
-	
+
+	<ItemGroup>
+	  <Reference Include="Emby.Server.Implementations">
+	    <HintPath>Emby.Server.Implementations.dll</HintPath>
+	  </Reference>
+	</ItemGroup>
+
 	<PropertyGroup>
-		<PostBuildEvent>xcopy "$(SolutionDir)bin\Release\net6.0\MovieDbWithProxy.dll" "$(SolutionDir)..\..\temp\programdata\plugins\" /Y</PostBuildEvent>
+		<PostBuildEvent>xcopy "$(SolutionDir)bin\Release\net6.0\MovieDbWithProxy.dll" "$(SolutionDir)..\..\Work\programdata\plugins\" /Y</PostBuildEvent>
 	</PropertyGroup>
 
 </Project>

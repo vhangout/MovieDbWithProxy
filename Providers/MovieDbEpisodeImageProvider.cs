@@ -12,10 +12,8 @@ using MediaBrowser.Model.Logging;
 using MediaBrowser.Model.Net;
 using MediaBrowser.Model.Providers;
 using MediaBrowser.Model.Serialization;
-using MovieDbWithProxy.Commons;
 using MovieDbWithProxy.Models;
 using System.Net;
-using System.Net.Http;
 
 namespace MovieDbWithProxy
 {
@@ -29,11 +27,12 @@ namespace MovieDbWithProxy
         public string Name => Plugin.ProviderName;
 
         public MovieDbEpisodeImageProvider(
+          IHttpClient httpClient,
           IServerConfigurationManager configurationManager,
           IJsonSerializer jsonSerializer,
           IFileSystem fileSystem,
           ILocalizationManager localization)
-          : base(configurationManager, jsonSerializer, fileSystem, localization)
+          : base(httpClient, configurationManager, jsonSerializer, fileSystem, localization)
         {
         }
 

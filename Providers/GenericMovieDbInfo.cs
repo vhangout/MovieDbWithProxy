@@ -10,6 +10,9 @@ using MediaBrowser.Model.Serialization;
 using MovieDbWithProxy.Models;
 using System.Globalization;
 using System.Net;
+using CompleteMovieData = MovieDbWithProxy.MovieDbProvider.CompleteMovieData;
+using Country = MovieDbWithProxy.MovieDbProvider.Country;
+using Youtube = MovieDbWithProxy.MovieDbProvider.Youtube;
 
 namespace MovieDbWithProxy
 {
@@ -63,7 +66,7 @@ namespace MovieDbWithProxy
             };
             if (string.IsNullOrEmpty(tmdbId))
             {
-                CompleteMovieData completeMovieData = await MovieDbProvider.Current.FetchMainResult(imdbId, false, language, preferredCountryCode, cancellationToken).ConfigureAwait(false);
+                MovieDbProvider.CompleteMovieData completeMovieData = await MovieDbProvider.Current.FetchMainResult(imdbId, false, language, preferredCountryCode, cancellationToken).ConfigureAwait(false);
                 if (completeMovieData != null)
                 {
                     tmdbId = completeMovieData.id.ToString(_usCulture);
@@ -74,7 +77,7 @@ namespace MovieDbWithProxy
             }
             if (!string.IsNullOrWhiteSpace(tmdbId))
             {
-                CompleteMovieData movieInfo = await MovieDbProvider.Current.EnsureMovieInfo(tmdbId, language, preferredCountryCode, cancellationToken).ConfigureAwait(false);
+                MovieDbProvider.CompleteMovieData movieInfo = await MovieDbProvider.Current.EnsureMovieInfo(tmdbId, language, preferredCountryCode, cancellationToken).ConfigureAwait(false);
                 if (movieInfo != null)
                 {
                     TmdbSettingsResult settings = await MovieDbProvider.Current.GetTmdbSettings(cancellationToken).ConfigureAwait(false);

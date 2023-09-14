@@ -20,8 +20,6 @@ using MediaBrowser.Model.Extensions;
 using MediaBrowser.Model.Configuration;
 using MovieDbWithProxy.Models;
 using HttpRequestOptions = MediaBrowser.Common.Net.HttpRequestOptions;
-using MovieDbWithProxy.Commons;
-using static System.Net.WebRequestMethods;
 
 namespace MovieDbWithProxy
 {
@@ -37,7 +35,8 @@ namespace MovieDbWithProxy
     {
         public string Name => Plugin.ProviderName;
 
-        private readonly IJsonSerializer _jsonSerializer;        
+        private readonly IJsonSerializer _jsonSerializer;
+        private readonly IHttpClient _httpClient;
         private readonly IFileSystem _fileSystem;
         private readonly IServerConfigurationManager _configurationManager;
         private readonly ILocalizationManager _localization;
@@ -45,7 +44,7 @@ namespace MovieDbWithProxy
         private readonly IApplicationHost _appHost;
 
         private readonly CultureInfo _usCulture = new CultureInfo("en-US");
-        private TmdbSettingsResult? _tmdbSettings;
+        private TmdbSettingsResult? _tmdbSettings;        
         public const string BaseMovieDbUrl = "https://api.themoviedb.org/";
 
         private const string TmdbConfigUrl = BaseMovieDbUrl + "3/configuration?api_key={0}";
@@ -68,6 +67,7 @@ namespace MovieDbWithProxy
 
         public MovieDbProvider(
             IJsonSerializer jsonSerializer,
+            IHttpClient httpClient,
             IFileSystem fileSystem,
             IServerConfigurationManager configurationManager,
             ILocalizationManager localization,
@@ -75,6 +75,7 @@ namespace MovieDbWithProxy
             IApplicationHost appHost)
         {
             _jsonSerializer = jsonSerializer;
+            _httpClient = httpClient;
             _fileSystem = fileSystem;
             _configurationManager = configurationManager;
             _localization = localization;
@@ -170,7 +171,7 @@ namespace MovieDbWithProxy
             }
         }
 
-        internal static string GetMovieDataPath(IApplicationPaths appPaths, string tmdbId) => Path.Combine(MovieDbProvider.GetMoviesDataPath(appPaths), tmdbId);
+        internal static string GetMovieDataPath(IApplicationPaths appPaths, string tmdbId) => Path.Combine(GetMoviesDataPath(appPaths), tmdbId);
 
         internal static string GetMoviesDataPath(IApplicationPaths appPaths) => Path.Combine(appPaths.CachePath, "tmdb-movies2");
 
@@ -260,10 +261,10 @@ namespace MovieDbWithProxy
           CancellationToken cancellationToken)
         {
             MovieDbProvider movieDbProvider = this;
-            string url = string.Format("https://api.themoviedb.org/3/movie/{0}?api_key={1}&append_to_response=alternative_titles,reviews,casts,releases,images,keywords,trailers", (object)id, (object)MovieDbProvider.ApiKey);
+            string url = string.Format("https://api.themoviedb.org/3/movie/{0}?api_key={1}&append_to_response=alternative_titles,reviews,casts,releases,images,keywords,trailers", (object)id, (object)ApiKey);
             if (!string.IsNullOrEmpty(language))
-                url += string.Format("&language={0}", (object)MovieDbProvider.NormalizeLanguage(language, country));
-            string str1 = MovieDbProvider.AddImageLanguageParam(url, language, country);
+                url += string.Format("&language={0}", (object)NormalizeLanguage(language, country));
+            string str1 = AddImageLanguageParam(url, language, country);
             cancellationToken.ThrowIfCancellationRequested();
             CacheMode cacheMode = isTmdbId ? CacheMode.None : CacheMode.Unconditional;
             TimeSpan cacheLength = MovieDbProviderBase.CacheTime;
@@ -276,7 +277,7 @@ namespace MovieDbWithProxy
                 {
                     Url = str1,
                     CancellationToken = cancellationToken,
-                    AcceptHeader = MovieDbProvider.AcceptHeader,
+                    AcceptHeader = AcceptHeader,
                     CacheMode = cacheMode,
                     CacheLength = cacheLength
                 }).ConfigureAwait(false);
@@ -308,7 +309,7 @@ namespace MovieDbWithProxy
             cancellationToken.ThrowIfCancellationRequested();
             if (mainResult != null && !string.IsNullOrEmpty(language) && !string.Equals(language, "en", StringComparison.OrdinalIgnoreCase))
             {
-                string str2 = AddImageLanguageParam(string.Format("https://api.themoviedb.org/3/movie/{0}?api_key={1}&append_to_response=alternative_titles,reviews,casts,releases,images,keywords,trailers", (object)id, (object)MovieDbProvider.ApiKey) + "&language=en", language, country);
+                string str2 = AddImageLanguageParam(string.Format("https://api.themoviedb.org/3/movie/{0}?api_key={1}&append_to_response=alternative_titles,reviews,casts,releases,images,keywords,trailers", (object)id, (object)ApiKey) + "&language=en", language, country);
                 response = await movieDbProvider.GetMovieDbResponse(new HttpRequestOptions()
                 {
                     Url = str2,
@@ -358,7 +359,7 @@ namespace MovieDbWithProxy
             _lastRequestTicks = DateTimeOffset.UtcNow.Ticks;
             options.BufferContent = true;
             options.UserAgent = "Emby/" + _appHost.ApplicationVersion?.ToString();
-            return await EntryPoint.Current.HttpClient.SendAsync(options, "GET").ConfigureAwait(false);
+            return await _httpClient.SendAsync(options, "GET").ConfigureAwait(false);
         }
 
         public int Order => 1;
@@ -366,11 +367,197 @@ namespace MovieDbWithProxy
         public Task<HttpResponseInfo> GetImageResponse(string url, CancellationToken cancellationToken)
         {
             EntryPoint.Current.Log(this, LogSeverity.Info, "*** => {0}", url);
-            return EntryPoint.Current.HttpClient.GetResponse(new HttpRequestOptions()
+            return _httpClient.GetResponse(new HttpRequestOptions()
             {
                 CancellationToken = cancellationToken,
                 Url = url
             });
+        }
+
+        internal class TmdbTitle
+        {
+            public string iso_3166_1 { get; set; }
+
+            public string title { get; set; }
+        }
+
+        internal class TmdbAltTitleResults
+        {
+            public int id { get; set; }
+
+            public List<TmdbTitle> titles { get; set; }
+        }
+
+        public class BelongsToCollection
+        {
+            public int id { get; set; }
+
+            public string name { get; set; }
+
+            public string poster_path { get; set; }
+
+            public string backdrop_path { get; set; }
+        }
+
+        public class ProductionCompany
+        {
+            public int id { get; set; }
+
+            public string logo_path { get; set; }
+
+            public string name { get; set; }
+
+            public string origin_country { get; set; }
+        }
+
+        public class ProductionCountry
+        {
+            public string iso_3166_1 { get; set; }
+
+            public string name { get; set; }
+        }
+
+        public class SpokenLanguage
+        {
+            public string english_name { get; set; }
+
+            public string iso_639_1 { get; set; }
+
+            public string name { get; set; }
+        }
+
+        public class Casts
+        {
+            public List<TmdbCast> cast { get; set; }
+
+            public List<TmdbCrew> crew { get; set; }
+        }
+
+        public class Country
+        {
+            public string certification { get; set; }
+
+            public string iso_3166_1 { get; set; }
+
+            public bool primary { get; set; }
+
+            public DateTimeOffset release_date { get; set; }
+
+            public string GetRating() => Country.GetRating(this.certification, this.iso_3166_1);
+
+            public static string GetRating(string rating, string iso_3166_1)
+            {
+                if (string.IsNullOrEmpty(rating))
+                    return (string)null;
+                if (string.Equals(iso_3166_1, "us", StringComparison.OrdinalIgnoreCase))
+                    return rating;
+                if (string.Equals(iso_3166_1, "de", StringComparison.OrdinalIgnoreCase))
+                    iso_3166_1 = "FSK";
+                return iso_3166_1 + "-" + rating;
+            }
+        }
+
+        public class Releases
+        {
+            public List<Country> countries { get; set; }
+        }
+
+        public class Images
+        {
+            public List<TmdbImage> backdrops { get; set; }
+
+            public List<TmdbImage> posters { get; set; }
+
+            public List<TmdbImage> logos { get; set; }
+        }
+
+        public class Youtube
+        {
+            public string name { get; set; }
+
+            public string size { get; set; }
+
+            public string source { get; set; }
+
+            public string type { get; set; }
+        }
+
+        public class Trailers
+        {
+            public List<object> quicktime { get; set; }
+
+            public List<Youtube> youtube { get; set; }
+        }
+
+        internal class CompleteMovieData
+        {
+            public bool adult { get; set; }
+
+            public string backdrop_path { get; set; }
+
+            public BelongsToCollection belongs_to_collection { get; set; }
+
+            public int budget { get; set; }
+
+            public List<TmdbGenre> genres { get; set; }
+
+            public string homepage { get; set; }
+
+            public int id { get; set; }
+
+            public string imdb_id { get; set; }
+
+            public string original_language { get; set; }
+
+            public string original_title { get; set; }
+
+            public string overview { get; set; }
+
+            public double popularity { get; set; }
+
+            public string poster_path { get; set; }
+
+            public List<ProductionCompany> production_companies { get; set; }
+
+            public List<ProductionCountry> production_countries { get; set; }
+
+            public string release_date { get; set; }
+
+            public int revenue { get; set; }
+
+            public int runtime { get; set; }
+
+            public List<SpokenLanguage> spoken_languages { get; set; }
+
+            public string status { get; set; }
+
+            public string tagline { get; set; }
+
+            public string title { get; set; }
+
+            public bool video { get; set; }
+
+            public double vote_average { get; set; }
+
+            public int vote_count { get; set; }
+
+            public Casts casts { get; set; }
+
+            public Releases releases { get; set; }
+
+            public Images images { get; set; }
+
+            public TmdbKeywords keywords { get; set; }
+
+            public Trailers trailers { get; set; }
+
+            public string name { get; set; }
+
+            public string original_name { get; set; }
+
+            public string GetOriginalTitle() => this.original_name ?? this.original_title;
+
+            public string GetTitle() => this.name ?? this.title ?? this.GetOriginalTitle();
         }
     }
 }
