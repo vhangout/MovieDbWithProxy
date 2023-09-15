@@ -74,16 +74,18 @@ namespace MovieDbWithProxy
                 var handler = new HttpClientHandler();
 
                 if (_options.Enable.GetValueOrDefault(false))
-                {
-                    //var credentials = _options.EnableCredentials.GetValueOrDefault(false) ? new NetworkCredential(_options.Login, _options.Password) : null;
-
+                {                    
                     handler.Proxy = new WebProxy
                     {
                         Address = new Uri($"{_options.ProxyType.ToLower()}://{_options.ProxyUrl}:{_options.ProxyPort}"),
                         BypassProxyOnLocal = false,
-                        UseDefaultCredentials = false
-                        //Credentials = credentials,                        
-                    };                    
+                        UseDefaultCredentials = false                                               
+                    };
+                    if (_options.EnableCredentials.GetValueOrDefault(false))
+                    {
+                        Log("Setup credential");
+                        handler.Proxy.Credentials = new NetworkCredential(_options.Login, _options.Password);
+                    }
                 }
 
                 context.HttpClient = new HttpClient(handler);

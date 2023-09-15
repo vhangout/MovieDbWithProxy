@@ -13,9 +13,9 @@
                 config.ProxyUrl = page.querySelector('#txtProxyUrl').value;
                 config.ProxyPort = page.querySelector('#txtProxyPort').value;
 
-                config.EnableCredentials = false; // form.querySelector('#chkEnableCredentials').checked;                
-                //config.Login = page.querySelector('#txtLogin').value;
-                //config.Password = page.querySelector('#txtPassword').value;
+                config.EnableCredentials = form.querySelector('#chkEnableCredentials').checked;                
+                config.Login = page.querySelector('#txtLogin').value;
+                config.Password = page.querySelector('#txtPassword').value;
 
                 config.EnableDebugLog = form.querySelector('#chkEnableDebugLogging').checked;
                 ApiClient.updateNamedConfiguration("moviedbwithproxy", config)
@@ -48,9 +48,9 @@
                 page.querySelector('#chkEnableProxy').checked = config.Enable;
                 page.querySelector('#txtProxyUrl').value = config.ProxyUrl || '';
                 page.querySelector('#txtProxyPort').value = config.ProxyPort || '';
-                //page.querySelector('#chkEnableCredentials').checked = config.EnableCredentials;
-                //page.querySelector('#txtLogin').value = config.Login || '';
-                //page.querySelector('#txtPassword').value = config.Password || '';
+                page.querySelector('#chkEnableCredentials').checked = config.EnableCredentials;
+                page.querySelector('#txtLogin').value = config.Login || '';
+                page.querySelector('#txtPassword').value = config.Password || '';
                 page.querySelector('#chkEnableDebugLogging').checked = config.EnableDebugLog;
                 loading.hide();
             });
